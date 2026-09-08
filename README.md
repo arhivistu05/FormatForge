@@ -1,206 +1,136 @@
-::: {align="center"}
 # 🔥 FormatForge
 
-### Offline-first file conversion for Windows
+**Offline-first file conversion for Windows.**
 
-**Images • Audio • Video • Documents • PDF**
+FormatForge is a Windows desktop application for converting, organizing,
+and managing files from one place. It combines a C# Windows Forms
+interface with native C++ converter libraries and Python-powered
+PDF/document tooling.
 
-FormatForge is a Windows desktop file conversion app that combines a
-**C# Windows Forms interface**, **native C++ converter libraries**, and
-**Python-powered PDF/document tooling**.
-
-**Created by `./F4N3`**
-:::
-
-------------------------------------------------------------------------
+Created by `./F4N3`.
 
 ## ✨ Features
 
--   🖼️ Convert images between supported formats.
--   🎵 Convert audio using FFmpeg.
--   🎬 Convert video using FFmpeg.
--   📄 Convert supported documents and generate PDFs.
--   📁 Queue individual files or entire folders.
--   🏷️ Filter and organize files by type and tags.
+-   🖼️ Convert image files between supported formats.
+-   🎵 Convert audio files with FFmpeg-backed workflows.
+-   🎬 Convert video files with FFmpeg-backed workflows.
+-   📄 Convert supported document formats and generate PDF output.
+-   📁 Add individual files or entire folders to a conversion queue.
+-   🏷️ Filter and organize queued files by type, status, and tags.
 -   👁️ Preview images and embedded audio album art.
 -   🧩 Combine multiple images into a single PDF.
--   🌙 Light and dark themes.
--   🔍 Runtime checks for required Windows dependencies.
--   🚀 Startup update notifications through GitHub Releases.
+-   🌙 Use light and dark themes.
+-   🔍 Check for required runtime dependencies at startup.
+-   🚀 Notify the user when a newer GitHub release is available.
 
-------------------------------------------------------------------------
+## 📁 Project Structure
 
-## 🖥️ Interface
-
-```{=html}
-<p align="center">
+``` text
+FormatForge/
+├── App/
+│   └── FormatForge.App/        # C# Windows Forms application
+├── Native/
+│   ├── Core/                   # converter_core native API
+│   ├── Image/                  # image_converter native library
+│   ├── Audio/                  # audio_converter native library
+│   ├── Video/                  # video_converter native library
+│   └── PythonConverter/        # native bridge between C++ and Python
+├── Python/                     # Python conversion scripts
+├── Resources/                  # icons, themes, and shared assets
+├── DLL/                        # runtime DLLs used by the app
+└── FFmpeg/                     # optional local FFmpeg runtime
 ```
-`<img src="Resources/GitHub/FormatForge-Main.png" alt="FormatForge main interface" width="900">`{=html}
-```{=html}
-</p>
-```
-> Add the current application screenshot as
-> `Resources/GitHub/FormatForge-Main.png`.
 
-------------------------------------------------------------------------
+Large runtime folders, generated build output, staging folders, logs,
+and backups are intentionally excluded from source control.
 
 ## ⚙️ Architecture
 
 ``` text
-┌─────────────────────────────────────┐
-│           FormatForge.App           │
-│          C# Windows Forms           │
-└──────────────────┬──────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────┐
-│          converter_core.dll         │
-│            Native C++ API           │
-└────────┬──────────┬──────────┬──────┘
-         │          │          │
-         ▼          ▼          ▼
- image_converter  audio_converter  video_converter
-      .dll             .dll             .dll
-                         │                │
-                         └───────┬────────┘
-                                 ▼
-                               FFmpeg
-
-                   ┌─────────────────────┐
-                   │ PythonConverter.dll │
-                   │    C++ ↔ Python     │
-                   └──────────┬──────────┘
-                              ▼
-                       PythonRuntime
-                              │
-                              ▼
-                      PDF / Documents
+FormatForge.App
+     |
+     v
+converter_core.dll
+     |
+     +--> image_converter.dll
+     |
+     +--> audio_converter.dll --> FFmpeg
+     |
+     +--> video_converter.dll --> FFmpeg
+     |
+     +--> PythonConverter.dll --> PythonRuntime --> PDF/document tools
 ```
 
-FormatForge keeps the user interface separate from its conversion
-engines. Native C++ libraries provide the conversion layer, while Python
-provides additional PDF and document functionality.
+The user interface stays separate from the conversion engines. The
+native layer exposes the main conversion API, FFmpeg handles audio/video
+workflows, and Python is used for PDF and document-related
+functionality.
 
-------------------------------------------------------------------------
+## 🛠️ Requirements
 
-## 📂 Project Layout
+### 🧰 Build Requirements
 
-``` text
-FormatForge/
-│
-├── App/
-│   └── FormatForge.App/        # C# Windows Forms application
-│
-├── Native/
-│   ├── Core/                   # converter_core C++ project
-│   ├── Image/                  # Image converter C++ sources/import library
-│   ├── Audio/                  # Audio converter C++ sources/import library
-│   ├── Video/                  # Video converter C++ sources/import library
-│   └── PythonConverter/        # Native C++ ↔ Python bridge
-│
-├── Python/                     # Python conversion scripts and engines
-├── Resources/                  # Icons, themes and shared resources
-├── DLL/                        # Small runtime DLLs used by the app
-└── FFmpeg/                     # Optional local FFmpeg runtime
-```
+-   Windows 10 or newer, x64
+-   Visual Studio with:
+    -   .NET desktop development workload
+    -   Desktop development with C++ workload
+    -   MSVC x64 build tools
+-   .NET SDK compatible with `net10.0-windows`
 
-Large external runtimes and generated files are intentionally excluded:
-
-``` text
-DLL/PythonRuntime/
-FFmpeg/
-Python virtual environments
-Visual Studio build output
-backup/staging folders
-```
-
-------------------------------------------------------------------------
-
-## 🔄 Conversion Pipeline
-
-``` text
-User
- │
- ▼
-FormatForge UI
- │
- ▼
-Conversion Request
- │
- ├── Image ───────► image_converter.dll
- │
- ├── Audio ───────► audio_converter.dll ─────► FFmpeg
- │
- ├── Video ───────► video_converter.dll ─────► FFmpeg
- │
- └── Document ────► PythonConverter.dll
-                           │
-                           ▼
-                     PythonRuntime
-                           │
-                           ▼
-                    PDF / Documents
-```
-
-------------------------------------------------------------------------
-
-## 🛠️ Build Requirements
-
-FormatForge currently targets **Windows x64**.
-
--   Windows 10 or newer
--   Visual Studio 2026 or newer
--   .NET SDK targeting `net10.0-windows`
--   **.NET desktop development** workload
--   **Desktop development with C++** workload
--   MSVC x64 build tools
-
-------------------------------------------------------------------------
-
-## 📦 Runtime Dependencies
+### 📦 Runtime Dependencies
 
   -----------------------------------------------------------------------
-  Component               Used for                Required when
+  Component               Used for                Notes
   ----------------------- ----------------------- -----------------------
-  **FFmpeg**              Audio and video         Using audio/video
-                          conversion              workflows
+  FFmpeg                  Audio and video         Required for
+                          conversion              audio/video workflows.
+                                                  It can be bundled
+                                                  locally or installed
+                                                  separately and
+                                                  available through
+                                                  `PATH`.
 
-  **Microsoft Office**    Office document         Converting Office
-                          conversion              formats
+  Microsoft Office        Office document         Required only for
+                          conversion              workflows that depend
+                                                  on Office formats.
+                                                  Microsoft Office is not
+                                                  bundled with
+                                                  FormatForge.
 
-  **PythonRuntime**       Python-backed           Using Python conversion
-                          PDF/document tools      engines
+  PythonRuntime           Python-backed           Used by
+                          PDF/document tools      `PythonConverter.dll`
+                                                  and the scripts in
+                                                  `Python/`.
   -----------------------------------------------------------------------
 
-FormatForge checks required runtime components during startup. If FFmpeg
-or Microsoft Office is not found, the application can still open, but
-conversions that depend on the missing component may fail.
-
-------------------------------------------------------------------------
+FormatForge can open even if optional dependencies are missing, but
+conversions that rely on missing components may fail. The application
+reports missing FFmpeg or Microsoft Office installations at startup.
 
 ## 🔨 Build
 
-From PowerShell:
+From the repository root:
 
 ``` powershell
 dotnet build .\App\FormatForge.App\FormatForge.App.csproj -c Release -p:Platform=x64
 ```
 
-Output:
+Expected output:
 
 ``` text
 App/FormatForge.App/bin/x64/Release/net10.0-windows/FormatForge.App.exe
 ```
 
-------------------------------------------------------------------------
-
 ## 🚀 GitHub Release Update Check
 
-The startup release check is configured in:
+Startup update checking is configured in:
 
 ``` text
 App/FormatForge.App/AppInfo.cs
 ```
+
+Update these constants when moving the project to another repository or
+release page:
 
 ``` csharp
 public const string LatestReleaseApiUrl =
@@ -210,15 +140,13 @@ public const string ReleasesPageUrl =
     "https://github.com/arhivistu05/FormatForge/releases/latest";
 ```
 
-When a GitHub release has a newer tag than `AppInfo.Version`,
-FormatForge shows a startup dialog with a button to open the latest
-release page.
+When a GitHub release tag is newer than `AppInfo.Version`, FormatForge
+displays a startup dialog with a button that opens the latest release
+page.
 
-------------------------------------------------------------------------
+## 📦 Release Package
 
-## 📦 Release Contents
-
-A complete release should include the required runtime components:
+A complete release package should include:
 
 ``` text
 FormatForge.App.exe
@@ -227,19 +155,16 @@ image_converter.dll
 audio_converter.dll
 video_converter.dll
 PythonConverter.dll
-
 DLL/
-└── PythonRuntime/
-
-FFmpeg/     # if bundled according to its license
+PythonRuntime/
 ```
 
-FFmpeg may instead be installed separately and available through `PATH`.
+If FFmpeg is bundled with the release, include it according to its
+license. Otherwise, users must install FFmpeg separately and make it
+available through `PATH`.
 
-Microsoft Office is **not bundled**. It must be installed separately
-when Office-based conversion support is required.
-
-------------------------------------------------------------------------
+Microsoft Office is not redistributed with FormatForge. Users must
+install it separately if they need Office-based conversion support.
 
 ## 🧱 Technology Stack
 
@@ -250,38 +175,29 @@ when Office-based conversion support is required.
   Image conversion       Native C++
   Audio conversion       C++ + FFmpeg
   Video conversion       C++ + FFmpeg
-  Document/PDF tools     Python
+  Document/PDF tooling   Python
   Native/Python bridge   C++
   Platform               Windows x64
-
-------------------------------------------------------------------------
 
 ## 🗺️ Roadmap
 
 -   [x] Windows Forms interface
--   [x] Native image conversion
--   [x] FFmpeg audio conversion
--   [x] FFmpeg video conversion
--   [x] Python conversion engines
--   [x] Native/Python bridge
+-   [x] Native converter core
+-   [x] Image conversion library
+-   [x] FFmpeg-backed audio conversion
+-   [x] FFmpeg-backed video conversion
+-   [x] Python conversion scripts
+-   [x] Native Python bridge
 -   [x] Light and dark themes
 -   [x] GitHub release update checking
 -   [ ] Installer
 -   [ ] Automated release builds
--   [ ] Additional conversion formats
-
-------------------------------------------------------------------------
+-   [ ] More conversion formats
 
 ## 📜 License
 
 License information has not been added yet.
 
-------------------------------------------------------------------------
+## 👤 Author
 
-::: {align="center"}
-### 🔥 FormatForge
-
-**Forge your files into the format you need.**
-
-Created by `./F4N3`
-:::
+FormatForge is created and maintained by `./F4N3`.
