@@ -1,6 +1,6 @@
 # 🔥 FormatForge
 
-**Offline-first file conversion for Windows.**
+**Offline file conversion for Windows.**
 
 FormatForge is a Windows desktop application for converting, organizing,
 and managing files from one place. It combines a C# Windows Forms
