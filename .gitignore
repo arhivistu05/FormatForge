@@ -1,0 +1,47 @@
+# Build output
+**/bin/
+**/obj/
+**/x64/
+**/Debug/
+**/Release/
+*.pdb
+*.ilk
+*.iobj
+*.ipdb
+*.obj
+*.tlog
+*.lastbuildstate
+*.recipe
+*.log
+
+# Visual Studio user state
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+
+# Local backups and generated snapshots
+**/Backups/
+**/*.bak
+**/*.bak_*
+App/FormatForge.App.Backups/
+
+# Python local environments and caches
+Python/venv/
+Python/__pycache__/
+Python/**/__pycache__/
+*.pyc
+*.pyo
+
+# Large runtimes and external dependencies
+DLL/PythonRuntime/
+DLL/PythonRuntime*/
+DLL/_downloads/
+DLL/_runtime_tests/
+DLL/upgrade/
+FFmpeg/
+
+# Local converted files
+Converted/
+*.tmp
