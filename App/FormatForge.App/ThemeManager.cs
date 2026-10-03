@@ -43,7 +43,8 @@ internal static class ThemeManager
 {
     private static readonly ConditionalWeakTable<ComboBox, ComboBoxThemeHolder> ComboBoxThemes = new();
     private static readonly ConditionalWeakTable<TabControl, TabControlThemeHolder> TabControlThemes = new();
-
+    private static readonly ConditionalWeakTable<CheckBox, CheckBoxThemeHolder> CheckBoxThemes = new();
+    private static readonly ConditionalWeakTable<ListView, ListViewThemeHolder> ListViewThemes = new();
     public static ThemePalette GetPalette(AppThemeMode mode)
     {
         if (mode == AppThemeMode.Dark)
@@ -110,8 +111,21 @@ internal static class ThemeManager
 
     public static void Apply(Control root, AppThemeMode mode)
     {
+        SetApplicationColorMode(mode);
         ThemePalette palette = GetPalette(mode);
         ApplyControl(root, palette);
+    }
+
+    public static void SetApplicationColorMode(AppThemeMode mode)
+    {
+        if (SystemInformation.HighContrast || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        {
+            return;
+        }
+
+#pragma warning disable WFO5001
+        Application.SetColorMode(mode == AppThemeMode.Dark ? SystemColorMode.Dark : SystemColorMode.Classic);
+#pragma warning restore WFO5001
     }
 
     private static void ApplyControl(Control control, ThemePalette palette)
@@ -121,6 +135,7 @@ internal static class ThemeManager
             case Form form:
                 form.BackColor = palette.Window;
                 form.ForeColor = palette.Foreground;
+                WindowChromeTheme.Apply(form, palette);
                 break;
             case UserControl userControl:
                 userControl.BackColor = palette.Surface;
@@ -174,19 +189,23 @@ internal static class ThemeManager
                 numericUpDown.ForeColor = palette.Foreground;
                 break;
             case ListView listView:
-                listView.BackColor = palette.ListBack;
-                listView.ForeColor = palette.Foreground;
-                listView.GridLines = palette.Window.GetBrightness() > 0.5f;
+                ApplyListView(listView, palette);
                 break;
             case CheckBox checkBox:
                 checkBox.FlatStyle = FlatStyle.Flat;
                 checkBox.BackColor = Color.Transparent;
                 checkBox.ForeColor = palette.Foreground;
                 checkBox.UseVisualStyleBackColor = false;
-                checkBox.FlatAppearance.BorderColor = palette.Border;
-                checkBox.FlatAppearance.CheckedBackColor = palette.Primary;
-                checkBox.FlatAppearance.MouseOverBackColor = palette.Hover;
-                checkBox.FlatAppearance.MouseDownBackColor = palette.Input;
+
+                CheckBoxThemes.Remove(checkBox);
+                CheckBoxThemes.Add(
+                    checkBox,
+                    new CheckBoxThemeHolder(palette));
+
+                checkBox.Paint -= CheckBox_Paint;
+                checkBox.Paint += CheckBox_Paint;
+
+                checkBox.Invalidate();
                 break;
             case TabControl tabControl:
                 tabControl.BackColor = palette.Surface;
@@ -200,6 +219,19 @@ internal static class ThemeManager
             case Button button:
                 ApplyButton(button, palette);
                 break;
+            case ThemedProgressBar progressBar:
+                progressBar.TrackColor = palette.ProgressBack;
+                progressBar.FillColor = palette.Primary;
+                progressBar.BorderColor = palette.Border;
+                progressBar.BackColor = palette.Surface;
+                break;
+            case MenuStrip menuStrip:
+                ApplyToolStrip(menuStrip, palette);
+                break;
+            case StatusStrip statusStrip:
+                ApplyToolStrip(statusStrip, palette);
+                statusStrip.SizingGrip = false;
+                break;
             case ToolStrip toolStrip:
                 ApplyToolStrip(toolStrip, palette);
                 break;
@@ -211,15 +243,105 @@ internal static class ThemeManager
         }
     }
 
+    private static void ApplyListView(ListView listView, ThemePalette palette)
+    {
+        listView.BackColor = palette.ListBack;
+        listView.ForeColor = palette.Foreground;
+        listView.GridLines = palette.Window.GetBrightness() > 0.5f;
+        listView.OwnerDraw = true;
+
+        ListViewThemes.Remove(listView);
+        ListViewThemes.Add(listView, new ListViewThemeHolder(palette));
+
+        listView.DrawColumnHeader -= ListView_DrawColumnHeader;
+        listView.DrawColumnHeader += ListView_DrawColumnHeader;
+        listView.DrawItem -= ListView_DrawItem;
+        listView.DrawItem += ListView_DrawItem;
+        listView.DrawSubItem -= ListView_DrawSubItem;
+        listView.DrawSubItem += ListView_DrawSubItem;
+
+        foreach (ListViewItem item in listView.Items)
+        {
+            item.BackColor = palette.ListBack;
+            item.ForeColor = palette.Foreground;
+
+            foreach (ListViewItem.ListViewSubItem subItem in item.SubItems)
+            {
+                subItem.BackColor = palette.ListBack;
+                subItem.ForeColor = palette.Foreground;
+            }
+        }
+
+        listView.Invalidate();
+    }
+
+    private static void ListView_DrawColumnHeader(object? sender, DrawListViewColumnHeaderEventArgs e)
+    {
+        if (sender is not ListView listView) return;
+
+        ThemePalette palette = ListViewThemes.TryGetValue(listView, out ListViewThemeHolder? holder)
+            ? holder.Palette : GetPalette(AppThemeMode.Light);
+
+        using SolidBrush backgroundBrush = new(palette.SurfaceAlt);
+        using Pen borderPen = new(palette.Border);
+        e.Graphics.FillRectangle(backgroundBrush, e.Bounds);
+        e.Graphics.DrawLine(borderPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+
+        TextRenderer.DrawText(e.Graphics, e.Header?.Text ?? string.Empty, listView.Font,
+            Rectangle.Inflate(e.Bounds, -8, 0), palette.Foreground,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+    }
+
+    private static void ListView_DrawItem(object? sender, DrawListViewItemEventArgs e)
+    {
+        if (sender is not ListView listView) return;
+        if (listView.View == View.Details) return;
+
+        ThemePalette palette = ListViewThemes.TryGetValue(listView, out ListViewThemeHolder? holder)
+            ? holder.Palette : GetPalette(AppThemeMode.Light);
+
+        bool selected = e.Item?.Selected ?? false;
+        Color backColor = selected ? palette.Primary : palette.ListBack;
+        Color foreColor = selected ? Color.White : palette.Foreground;
+
+        using SolidBrush backgroundBrush = new(backColor);
+        e.Graphics.FillRectangle(backgroundBrush, e.Bounds);
+
+        TextRenderer.DrawText(e.Graphics, e.Item?.Text ?? string.Empty, listView.Font,
+            Rectangle.Inflate(e.Bounds, -6, 0), foreColor,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+    }
+
+    private static void ListView_DrawSubItem(object? sender, DrawListViewSubItemEventArgs e)
+    {
+        if (sender is not ListView listView) return;
+
+        ThemePalette palette = ListViewThemes.TryGetValue(listView, out ListViewThemeHolder? holder)
+            ? holder.Palette : GetPalette(AppThemeMode.Light);
+
+        bool selected = e.Item?.Selected ?? false;
+        Color backColor = selected ? palette.Primary : palette.ListBack;
+        Color foreColor = selected ? Color.White : palette.Foreground;
+
+        using SolidBrush backgroundBrush = new(backColor);
+        e.Graphics.FillRectangle(backgroundBrush, e.Bounds);
+
+        TextRenderer.DrawText(e.Graphics, e.SubItem?.Text ?? string.Empty, listView.Font,
+            Rectangle.Inflate(e.Bounds, -6, 0), foreColor,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+    }
+
     private static void ApplyButton(Button button, ThemePalette palette)
     {
         bool primary = button.Name.Contains("convert", StringComparison.OrdinalIgnoreCase) ||
                        button.Name.Contains("merge", StringComparison.OrdinalIgnoreCase) ||
                        button.Name.Contains("save", StringComparison.OrdinalIgnoreCase);
 
+        bool lightMode = palette.Window.GetBrightness() >= 0.5f;
+        button.FlatStyle = FlatStyle.Flat;
         button.UseVisualStyleBackColor = false;
         button.BackColor = primary ? palette.Primary : palette.SurfaceAlt;
-        button.ForeColor = primary ? Color.White : palette.Foreground;
+        button.ForeColor = lightMode ? Color.Black : palette.Foreground;
 
         if (button.FlatStyle == FlatStyle.Flat)
         {
@@ -231,27 +353,29 @@ internal static class ThemeManager
 
     private static void ApplyToolStrip(ToolStrip toolStrip, ThemePalette palette)
     {
+        ToolStripRenderer renderer = new ToolStripProfessionalRenderer(new FormatForgeColorTable(palette));
+        toolStrip.Renderer = renderer;
         toolStrip.BackColor = palette.MenuBack;
         toolStrip.ForeColor = palette.Foreground;
-        toolStrip.Renderer = new ToolStripProfessionalRenderer(new FormatForgeColorTable(palette));
         foreach (ToolStripItem item in toolStrip.Items)
         {
-            ApplyToolStripItem(item, palette);
+            ApplyToolStripItem(item, palette, renderer);
         }
     }
 
-    private static void ApplyToolStripItem(ToolStripItem item, ThemePalette palette)
+    private static void ApplyToolStripItem(ToolStripItem item, ThemePalette palette, ToolStripRenderer renderer)
     {
         item.BackColor = palette.MenuBack;
         item.ForeColor = palette.Foreground;
 
         if (item is ToolStripDropDownItem dropDownItem)
         {
+            dropDownItem.DropDown.Renderer = renderer;
             dropDownItem.DropDown.BackColor = palette.Surface;
             dropDownItem.DropDown.ForeColor = palette.Foreground;
             foreach (ToolStripItem child in dropDownItem.DropDownItems)
             {
-                ApplyToolStripItem(child, palette);
+                ApplyToolStripItem(child, palette, renderer);
             }
         }
     }
@@ -284,6 +408,86 @@ internal static class ThemeManager
             Rectangle.Inflate(e.Bounds, -6, 0),
             foreColor,
             TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+    }
+
+    private static void CheckBox_Paint(
+    object? sender,
+    PaintEventArgs e)
+    {
+        if (sender is not CheckBox checkBox)
+            return;
+
+        ThemePalette palette =
+            CheckBoxThemes.TryGetValue(
+                checkBox,
+                out CheckBoxThemeHolder? holder)
+                ? holder.Palette
+                : GetPalette(AppThemeMode.Light);
+
+        e.Graphics.Clear(checkBox.Parent?.BackColor ?? palette.Surface);
+
+        int boxSize = 16;
+
+        Rectangle box = new Rectangle(
+            1,
+            (checkBox.Height - boxSize) / 2,
+            boxSize,
+            boxSize);
+
+        Color boxBackColor =
+            checkBox.Checked
+                ? palette.Primary
+                : palette.Input;
+
+        using SolidBrush boxBrush =
+            new SolidBrush(boxBackColor);
+
+        using Pen borderPen =
+            new Pen(
+                checkBox.Checked
+                    ? palette.Primary
+                    : palette.Border,
+                1.5f);
+
+        e.Graphics.FillRectangle(boxBrush, box);
+        e.Graphics.DrawRectangle(borderPen, box);
+
+        if (checkBox.Checked)
+        {
+            using Pen checkPen =
+                new Pen(Color.White, 2.2f)
+                {
+                    StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                    EndCap = System.Drawing.Drawing2D.LineCap.Round
+                };
+
+            e.Graphics.DrawLines(
+                checkPen,
+                new[]
+                {
+                new Point(box.Left + 4, box.Top + 8),
+                new Point(box.Left + 7, box.Top + 11),
+                new Point(box.Left + 13, box.Top + 5)
+                });
+        }
+
+        Rectangle textBounds = new Rectangle(
+            box.Right + 7,
+            0,
+            Math.Max(0, checkBox.Width - box.Right - 7),
+            checkBox.Height);
+
+        TextRenderer.DrawText(
+            e.Graphics,
+            checkBox.Text,
+            checkBox.Font,
+            textBounds,
+            checkBox.Enabled
+                ? palette.Foreground
+                : palette.MutedForeground,
+            TextFormatFlags.Left |
+            TextFormatFlags.VerticalCenter |
+            TextFormatFlags.EndEllipsis);
     }
 
     private static void TabControl_DrawItem(object? sender, DrawItemEventArgs e)
@@ -369,9 +573,29 @@ internal static class ThemeManager
         public override Color ButtonSelectedGradientEnd => palette.Hover;
     }
 
+    private sealed class ListViewThemeHolder
+    {
+        public ListViewThemeHolder(ThemePalette palette)
+        {
+            Palette = palette;
+        }
+
+        public ThemePalette Palette { get; }
+    }
+
     private sealed class ComboBoxThemeHolder
     {
         public ComboBoxThemeHolder(ThemePalette palette)
+        {
+            Palette = palette;
+        }
+
+        public ThemePalette Palette { get; }
+    }
+
+    private sealed class CheckBoxThemeHolder
+    {
+        public CheckBoxThemeHolder(ThemePalette palette)
         {
             Palette = palette;
         }

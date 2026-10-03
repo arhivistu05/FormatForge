@@ -233,8 +233,8 @@ internal static class ConverterCore
             return ConversionOutcome.Fail(ConverterError.Unknown, initializationError ?? "Native converter could not be initialized.", request.OutputPath);
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(request.OutputPath) ?? AppContext.BaseDirectory);
-
+        string outputPathForCommit = request.OutputPath;
+        string? temporaryOutputPath = null;
         IntPtr inputPath = IntPtr.Zero;
         IntPtr outputPath = IntPtr.Zero;
         string? callbackError = null;
@@ -258,8 +258,12 @@ internal static class ConverterCore
 
         try
         {
+            outputPathForCommit = Path.GetFullPath(request.OutputPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPathForCommit) ?? AppContext.BaseDirectory);
+            temporaryOutputPath = CreateTemporaryOutputPath(outputPathForCommit);
+
             inputPath = Marshal.StringToCoTaskMemUTF8(request.InputPath);
-            outputPath = Marshal.StringToCoTaskMemUTF8(request.OutputPath);
+            outputPath = Marshal.StringToCoTaskMemUTF8(temporaryOutputPath);
 
             NativeConversionOptions options = new NativeConversionOptions
             {
@@ -285,6 +289,11 @@ internal static class ConverterCore
             };
 
             using CancellationTokenRegistration registration = cancellationToken.Register(Cancel);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return ConversionOutcome.Fail(ConverterError.Cancelled, "Conversion was cancelled.", request.OutputPath);
+            }
+
             progress?.Report(0.0);
             ConverterError result = converter_convert_with_options(ref options, ref callbacks);
             progress?.Report(result == ConverterError.Success ? 1.0 : 0.0);
@@ -301,16 +310,22 @@ internal static class ConverterCore
 
             if (result == ConverterError.Success)
             {
-                if (!File.Exists(request.OutputPath))
+                if (!File.Exists(temporaryOutputPath))
                 {
                     return ConversionOutcome.Fail(ConverterError.Io, "Conversion finished, but the output file was not created.", request.OutputPath);
                 }
 
-                return ConversionOutcome.Ok(request.OutputPath);
+                File.Move(temporaryOutputPath, outputPathForCommit, request.Overwrite);
+                temporaryOutputPath = null;
+                return ConversionOutcome.Ok(outputPathForCommit);
             }
 
             string message = callbackError ?? GetDetailedError(result, request.Format);
             return ConversionOutcome.Fail(result, message, request.OutputPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return ConversionOutcome.Fail(ConverterError.Io, ex.Message, request.OutputPath);
         }
         catch (Exception ex) when (ex is DllNotFoundException or BadImageFormatException or EntryPointNotFoundException or SEHException)
         {
@@ -327,7 +342,29 @@ internal static class ConverterCore
             {
                 Marshal.FreeCoTaskMem(outputPath);
             }
+
+            if (!string.IsNullOrEmpty(temporaryOutputPath))
+            {
+                try
+                {
+                    File.Delete(temporaryOutputPath);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
         }
+    }
+
+    private static string CreateTemporaryOutputPath(string outputPath)
+    {
+        string directory = Path.GetDirectoryName(outputPath) ?? AppContext.BaseDirectory;
+        string fileName = Path.GetFileNameWithoutExtension(outputPath);
+        string extension = Path.GetExtension(outputPath);
+        return Path.Combine(directory, fileName + "." + Guid.NewGuid().ToString("N") + ".tmp" + extension);
     }
 
     public static void Cancel()

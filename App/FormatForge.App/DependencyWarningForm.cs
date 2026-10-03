@@ -19,6 +19,7 @@ internal sealed class DependencyWarningForm : Form
     private void InitializeWarningForm()
     {
         ThemePalette palette = ThemeManager.GetPalette(theme);
+        WindowChromeTheme.Apply(this, palette);
         Text = "FormatForge Requirements";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;

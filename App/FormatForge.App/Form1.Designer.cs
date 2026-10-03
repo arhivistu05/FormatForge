@@ -19,6 +19,7 @@ namespace FormatForge.App
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             mainMenu = new MenuStrip();
             fileMenu = new ToolStripMenuItem();
             fileAddFilesMenuItem = new ToolStripMenuItem();
@@ -84,15 +85,16 @@ namespace FormatForge.App
             contextRenameMenuItem = new ToolStripMenuItem();
             contextDeleteMenuItem = new ToolStripMenuItem();
             contextPropertiesMenuItem = new ToolStripMenuItem();
-            fileTypeImages = new ImageList(components);
             fileTypeLargeImages = new ImageList(components);
+            fileTypeImages = new ImageList(components);
             listHeaderPanel = new Panel();
-            filesTitleLabel = new Label();
             searchTextBox = new TextBox();
+            filesTitleLabel = new Label();
             detailsPanel = new RoundedPanel();
-            detailsPreviewPanel = new RoundedPanel();
-            detailsPreviewIcon = new PictureBox();
-            detailsTitleLabel = new Label();
+            detailsTagChipLabel = new Label();
+            detailsAddTagButton = new Button();
+            detailsTagsLabel = new Label();
+            detailsDividerPanel = new Panel();
             detailsGridPanel = new TableLayoutPanel();
             detailsTypeLabel = new Label();
             detailsTypeValueLabel = new Label();
@@ -104,26 +106,25 @@ namespace FormatForge.App
             detailsBitrateValueLabel = new Label();
             detailsPathLabel = new Label();
             detailsPathValueLabel = new Label();
-            detailsDividerPanel = new Panel();
-            detailsTagsLabel = new Label();
-            detailsAddTagButton = new Button();
-            detailsTagChipLabel = new Label();
+            detailsTitleLabel = new Label();
+            detailsPreviewPanel = new RoundedPanel();
+            detailsPreviewIcon = new PictureBox();
             optionsPanel = new RoundedPanel();
             optionsLayout = new TableLayoutPanel();
             outputPanel = new Panel();
-            outputDirectoryLabel = new Label();
-            outputDirectoryTextBox = new TextBox();
-            browseOutputButton = new Button();
             openOutputFolderCheckBox = new CheckBox();
+            browseOutputButton = new Button();
+            outputDirectoryTextBox = new TextBox();
+            outputDirectoryLabel = new Label();
             conversionOptionsPanel = new Panel();
-            optionsLabel = new Label();
-            preserveMetadataCheckBox = new CheckBox();
-            keepOriginalDateCheckBox = new CheckBox();
             overwriteExistingFilesCheckBox = new CheckBox();
+            keepOriginalDateCheckBox = new CheckBox();
+            preserveMetadataCheckBox = new CheckBox();
+            optionsLabel = new Label();
             progressPanel = new Panel();
-            progressTitleLabel = new Label();
-            progressBar = new ThemedProgressBar();
             progressTextLabel = new Label();
+            progressBar = new ThemedProgressBar();
+            progressTitleLabel = new Label();
             conversionBarPanel = new RoundedPanel();
             categoryFlow = new FlowLayoutPanel();
             categoryImagesButton = new Button();
@@ -131,15 +132,15 @@ namespace FormatForge.App
             categoryVideoButton = new Button();
             categoryDocumentsButton = new Button();
             outputFormatPanel = new Panel();
-            outputFormatLabel = new Label();
             outputFormatComboBox = new ComboBox();
+            outputFormatLabel = new Label();
             advancedButton = new Button();
             mergeImagesPdfButton = new Button();
             convertNowButton = new Button();
             headerPanel = new Panel();
-            appIcon = new PictureBox();
-            appTitle = new Label();
             appSubtitle = new Label();
+            appTitle = new Label();
+            appIcon = new PictureBox();
             statusStrip = new StatusStrip();
             filesCountStatusLabel = new ToolStripStatusLabel();
             statusSeparatorLabel1 = new ToolStripStatusLabel();
@@ -168,9 +169,9 @@ namespace FormatForge.App
             fileContextMenu.SuspendLayout();
             listHeaderPanel.SuspendLayout();
             detailsPanel.SuspendLayout();
+            detailsGridPanel.SuspendLayout();
             detailsPreviewPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)detailsPreviewIcon).BeginInit();
-            detailsGridPanel.SuspendLayout();
             optionsPanel.SuspendLayout();
             optionsLayout.SuspendLayout();
             outputPanel.SuspendLayout();
@@ -197,40 +198,40 @@ namespace FormatForge.App
             // 
             // fileMenu
             // 
-            fileMenu.DropDownItems.AddRange(new ToolStripItem[] { fileAddFilesMenuItem, fileAddFolderMenuItem, new ToolStripSeparator(), fileRemoveSelectedMenuItem, fileClearListMenuItem, new ToolStripSeparator(), fileExitMenuItem });
+            fileMenu.DropDownItems.AddRange(new ToolStripItem[] { fileAddFilesMenuItem, fileAddFolderMenuItem, fileRemoveSelectedMenuItem, fileClearListMenuItem, fileExitMenuItem });
             fileMenu.Name = "fileMenu";
             fileMenu.Size = new Size(37, 20);
             fileMenu.Text = "&File";
             // 
             // fileAddFilesMenuItem
             // 
-            fileAddFilesMenuItem.Image = UiIconFactory.CreateIcon(UiIconKind.AddFile, Color.FromArgb(32, 112, 214), 18);
+            fileAddFilesMenuItem.Image = (Image)resources.GetObject("fileAddFilesMenuItem.Image");
             fileAddFilesMenuItem.Name = "fileAddFilesMenuItem";
             fileAddFilesMenuItem.ShortcutKeys = Keys.Control | Keys.O;
-            fileAddFilesMenuItem.Size = new Size(224, 22);
+            fileAddFilesMenuItem.Size = new Size(214, 22);
             fileAddFilesMenuItem.Text = "&Add files...";
             fileAddFilesMenuItem.Click += AddFilesButton_Click;
             // 
             // fileAddFolderMenuItem
             // 
-            fileAddFolderMenuItem.Image = UiIconFactory.CreateIcon(UiIconKind.AddFolder, Color.FromArgb(32, 112, 214), 18);
+            fileAddFolderMenuItem.Image = (Image)resources.GetObject("fileAddFolderMenuItem.Image");
             fileAddFolderMenuItem.Name = "fileAddFolderMenuItem";
             fileAddFolderMenuItem.ShortcutKeys = Keys.Control | Keys.Shift | Keys.O;
-            fileAddFolderMenuItem.Size = new Size(224, 22);
+            fileAddFolderMenuItem.Size = new Size(214, 22);
             fileAddFolderMenuItem.Text = "Add &folder...";
             fileAddFolderMenuItem.Click += AddFolderButton_Click;
             // 
             // fileRemoveSelectedMenuItem
             // 
             fileRemoveSelectedMenuItem.Name = "fileRemoveSelectedMenuItem";
-            fileRemoveSelectedMenuItem.Size = new Size(224, 22);
+            fileRemoveSelectedMenuItem.Size = new Size(214, 22);
             fileRemoveSelectedMenuItem.Text = "&Remove selected";
             fileRemoveSelectedMenuItem.Click += RemoveSelectedButton_Click;
             // 
             // fileClearListMenuItem
             // 
             fileClearListMenuItem.Name = "fileClearListMenuItem";
-            fileClearListMenuItem.Size = new Size(224, 22);
+            fileClearListMenuItem.Size = new Size(214, 22);
             fileClearListMenuItem.Text = "Clear &list";
             fileClearListMenuItem.Click += ClearAllButton_Click;
             // 
@@ -238,13 +239,13 @@ namespace FormatForge.App
             // 
             fileExitMenuItem.Name = "fileExitMenuItem";
             fileExitMenuItem.ShortcutKeys = Keys.Alt | Keys.F4;
-            fileExitMenuItem.Size = new Size(224, 22);
+            fileExitMenuItem.Size = new Size(214, 22);
             fileExitMenuItem.Text = "E&xit";
             fileExitMenuItem.Click += FileExitMenuItem_Click;
             // 
             // editMenu
             // 
-            editMenu.DropDownItems.AddRange(new ToolStripItem[] { editCutMenuItem, editCopyMenuItem, editPasteMenuItem, new ToolStripSeparator(), editRenameMenuItem, editDeleteMenuItem, new ToolStripSeparator(), editSelectAllMenuItem, new ToolStripSeparator(), editPropertiesMenuItem });
+            editMenu.DropDownItems.AddRange(new ToolStripItem[] { editCutMenuItem, editCopyMenuItem, editPasteMenuItem, editRenameMenuItem, editDeleteMenuItem, editSelectAllMenuItem, editPropertiesMenuItem });
             editMenu.Name = "editMenu";
             editMenu.Size = new Size(39, 20);
             editMenu.Text = "&Edit";
@@ -307,7 +308,7 @@ namespace FormatForge.App
             // 
             // viewMenu
             // 
-            viewMenu.DropDownItems.AddRange(new ToolStripItem[] { viewDetailsMenuItem, viewLargeIconsMenuItem, new ToolStripSeparator(), viewTagsPanelMenuItem, viewRefreshMenuItem });
+            viewMenu.DropDownItems.AddRange(new ToolStripItem[] { viewDetailsMenuItem, viewLargeIconsMenuItem, viewTagsPanelMenuItem, viewRefreshMenuItem });
             viewMenu.Name = "viewMenu";
             viewMenu.Size = new Size(44, 20);
             viewMenu.Text = "&View";
@@ -317,14 +318,14 @@ namespace FormatForge.App
             viewDetailsMenuItem.Checked = true;
             viewDetailsMenuItem.CheckState = CheckState.Checked;
             viewDetailsMenuItem.Name = "viewDetailsMenuItem";
-            viewDetailsMenuItem.Size = new Size(180, 22);
+            viewDetailsMenuItem.Size = new Size(160, 22);
             viewDetailsMenuItem.Text = "&Details";
             viewDetailsMenuItem.Click += ViewDetailsMenuItem_Click;
             // 
             // viewLargeIconsMenuItem
             // 
             viewLargeIconsMenuItem.Name = "viewLargeIconsMenuItem";
-            viewLargeIconsMenuItem.Size = new Size(180, 22);
+            viewLargeIconsMenuItem.Size = new Size(160, 22);
             viewLargeIconsMenuItem.Text = "&Large icons";
             viewLargeIconsMenuItem.Click += ViewLargeIconsMenuItem_Click;
             // 
@@ -334,45 +335,45 @@ namespace FormatForge.App
             viewTagsPanelMenuItem.CheckOnClick = true;
             viewTagsPanelMenuItem.CheckState = CheckState.Checked;
             viewTagsPanelMenuItem.Name = "viewTagsPanelMenuItem";
-            viewTagsPanelMenuItem.Size = new Size(180, 22);
+            viewTagsPanelMenuItem.Size = new Size(160, 22);
             viewTagsPanelMenuItem.Text = "Show &tags panel";
             viewTagsPanelMenuItem.CheckedChanged += ViewTagsPanelMenuItem_CheckedChanged;
             // 
             // viewRefreshMenuItem
             // 
-            viewRefreshMenuItem.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.FromArgb(32, 112, 214), 18);
+            viewRefreshMenuItem.Image = (Image)resources.GetObject("viewRefreshMenuItem.Image");
             viewRefreshMenuItem.Name = "viewRefreshMenuItem";
             viewRefreshMenuItem.ShortcutKeys = Keys.F5;
-            viewRefreshMenuItem.Size = new Size(180, 22);
+            viewRefreshMenuItem.Size = new Size(160, 22);
             viewRefreshMenuItem.Text = "&Refresh";
             viewRefreshMenuItem.Click += ViewRefreshMenuItem_Click;
             // 
             // helpMenu
             // 
-            helpMenu.DropDownItems.AddRange(new ToolStripItem[] { helpUpdatePythonMenuItem, helpDocumentationMenuItem, new ToolStripSeparator(), helpAboutMenuItem });
+            helpMenu.DropDownItems.AddRange(new ToolStripItem[] { helpUpdatePythonMenuItem, helpDocumentationMenuItem, helpAboutMenuItem });
             helpMenu.Name = "helpMenu";
             helpMenu.Size = new Size(44, 20);
             helpMenu.Text = "&Help";
             // 
             // helpUpdatePythonMenuItem
             // 
-            helpUpdatePythonMenuItem.Image = UiIconFactory.CreateIcon(UiIconKind.Settings, Color.FromArgb(69, 86, 107), 18);
+            helpUpdatePythonMenuItem.Image = (Image)resources.GetObject("helpUpdatePythonMenuItem.Image");
             helpUpdatePythonMenuItem.Name = "helpUpdatePythonMenuItem";
-            helpUpdatePythonMenuItem.Size = new Size(240, 22);
+            helpUpdatePythonMenuItem.Size = new Size(232, 22);
             helpUpdatePythonMenuItem.Text = "Update Python and Libraries...";
             helpUpdatePythonMenuItem.Click += HelpUpdatePythonMenuItem_Click;
             // 
             // helpDocumentationMenuItem
             // 
             helpDocumentationMenuItem.Name = "helpDocumentationMenuItem";
-            helpDocumentationMenuItem.Size = new Size(240, 22);
+            helpDocumentationMenuItem.Size = new Size(232, 22);
             helpDocumentationMenuItem.Text = "&Documentation";
             helpDocumentationMenuItem.Click += HelpDocumentationMenuItem_Click;
             // 
             // helpAboutMenuItem
             // 
             helpAboutMenuItem.Name = "helpAboutMenuItem";
-            helpAboutMenuItem.Size = new Size(240, 22);
+            helpAboutMenuItem.Size = new Size(232, 22);
             helpAboutMenuItem.Text = "&About FormatForge";
             helpAboutMenuItem.Click += HelpAboutMenuItem_Click;
             // 
@@ -385,7 +386,7 @@ namespace FormatForge.App
             shellPanel.Location = new Point(0, 24);
             shellPanel.Name = "shellPanel";
             shellPanel.Padding = new Padding(12);
-            shellPanel.Size = new Size(1320, 710);
+            shellPanel.Size = new Size(1320, 714);
             shellPanel.TabIndex = 1;
             // 
             // mainSplit
@@ -394,11 +395,17 @@ namespace FormatForge.App
             mainSplit.FixedPanel = FixedPanel.Panel1;
             mainSplit.Location = new Point(12, 94);
             mainSplit.Name = "mainSplit";
+            // 
+            // mainSplit.Panel1
+            // 
             mainSplit.Panel1.Controls.Add(sidebarPanel);
             mainSplit.Panel1MinSize = 170;
+            // 
+            // mainSplit.Panel2
+            // 
             mainSplit.Panel2.Controls.Add(workspacePanel);
             mainSplit.Panel2MinSize = 860;
-            mainSplit.Size = new Size(1296, 604);
+            mainSplit.Size = new Size(1296, 608);
             mainSplit.SplitterDistance = 178;
             mainSplit.SplitterWidth = 10;
             mainSplit.TabIndex = 1;
@@ -407,17 +414,17 @@ namespace FormatForge.App
             // 
             sidebarPanel.BackColor = Color.FromArgb(250, 252, 255);
             sidebarPanel.BorderColor = Color.FromArgb(216, 226, 238);
-            sidebarPanel.BorderRadius = 10;
             sidebarPanel.Controls.Add(sidebarFlow);
             sidebarPanel.Dock = DockStyle.Fill;
             sidebarPanel.Location = new Point(0, 0);
             sidebarPanel.Name = "sidebarPanel";
             sidebarPanel.Padding = new Padding(12);
-            sidebarPanel.Size = new Size(178, 604);
+            sidebarPanel.Size = new Size(178, 608);
             sidebarPanel.TabIndex = 0;
             // 
             // sidebarFlow
             // 
+            sidebarFlow.AutoScroll = true;
             sidebarFlow.Controls.Add(sidebarConvertButton);
             sidebarFlow.Controls.Add(sidebarAddFilesButton);
             sidebarFlow.Controls.Add(sidebarAddFolderButton);
@@ -430,12 +437,11 @@ namespace FormatForge.App
             sidebarFlow.Controls.Add(sidebarSeparatorBottom);
             sidebarFlow.Controls.Add(sidebarSettingsButton);
             sidebarFlow.Controls.Add(sidebarAboutButton);
-            sidebarFlow.AutoScroll = true;
             sidebarFlow.Dock = DockStyle.Fill;
             sidebarFlow.FlowDirection = FlowDirection.TopDown;
             sidebarFlow.Location = new Point(12, 12);
             sidebarFlow.Name = "sidebarFlow";
-            sidebarFlow.Size = new Size(154, 580);
+            sidebarFlow.Size = new Size(154, 584);
             sidebarFlow.TabIndex = 0;
             sidebarFlow.WrapContents = false;
             // 
@@ -446,7 +452,7 @@ namespace FormatForge.App
             sidebarConvertButton.FlatStyle = FlatStyle.Flat;
             sidebarConvertButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             sidebarConvertButton.ForeColor = Color.White;
-            sidebarConvertButton.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.White, 22);
+            sidebarConvertButton.Image = (Image)resources.GetObject("sidebarConvertButton.Image");
             sidebarConvertButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarConvertButton.Location = new Point(0, 0);
             sidebarConvertButton.Margin = new Padding(0, 0, 0, 12);
@@ -463,7 +469,7 @@ namespace FormatForge.App
             // 
             sidebarAddFilesButton.FlatAppearance.BorderSize = 0;
             sidebarAddFilesButton.FlatStyle = FlatStyle.Flat;
-            sidebarAddFilesButton.Image = UiIconFactory.CreateIcon(UiIconKind.AddFile, Color.FromArgb(63, 85, 111), 22);
+            sidebarAddFilesButton.Image = (Image)resources.GetObject("sidebarAddFilesButton.Image");
             sidebarAddFilesButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarAddFilesButton.Location = new Point(0, 52);
             sidebarAddFilesButton.Margin = new Padding(0, 0, 0, 6);
@@ -480,7 +486,7 @@ namespace FormatForge.App
             // 
             sidebarAddFolderButton.FlatAppearance.BorderSize = 0;
             sidebarAddFolderButton.FlatStyle = FlatStyle.Flat;
-            sidebarAddFolderButton.Image = UiIconFactory.CreateIcon(UiIconKind.AddFolder, Color.FromArgb(63, 85, 111), 22);
+            sidebarAddFolderButton.Image = (Image)resources.GetObject("sidebarAddFolderButton.Image");
             sidebarAddFolderButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarAddFolderButton.Location = new Point(0, 94);
             sidebarAddFolderButton.Margin = new Padding(0, 0, 0, 6);
@@ -497,7 +503,7 @@ namespace FormatForge.App
             // 
             sidebarRemoveButton.FlatAppearance.BorderSize = 0;
             sidebarRemoveButton.FlatStyle = FlatStyle.Flat;
-            sidebarRemoveButton.Image = UiIconFactory.CreateIcon(UiIconKind.Remove, Color.FromArgb(245, 76, 92), 22);
+            sidebarRemoveButton.Image = (Image)resources.GetObject("sidebarRemoveButton.Image");
             sidebarRemoveButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarRemoveButton.Location = new Point(0, 136);
             sidebarRemoveButton.Margin = new Padding(0, 0, 0, 6);
@@ -514,7 +520,7 @@ namespace FormatForge.App
             // 
             sidebarClearAllButton.FlatAppearance.BorderSize = 0;
             sidebarClearAllButton.FlatStyle = FlatStyle.Flat;
-            sidebarClearAllButton.Image = UiIconFactory.CreateIcon(UiIconKind.Clear, Color.FromArgb(63, 85, 111), 22);
+            sidebarClearAllButton.Image = (Image)resources.GetObject("sidebarClearAllButton.Image");
             sidebarClearAllButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarClearAllButton.Location = new Point(0, 178);
             sidebarClearAllButton.Margin = new Padding(0, 0, 0, 10);
@@ -540,7 +546,7 @@ namespace FormatForge.App
             // 
             tagsHeaderLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             tagsHeaderLabel.ForeColor = Color.FromArgb(24, 30, 39);
-            tagsHeaderLabel.Image = UiIconFactory.CreateIcon(UiIconKind.Tags, Color.FromArgb(63, 85, 111), 20);
+            tagsHeaderLabel.Image = (Image)resources.GetObject("tagsHeaderLabel.Image");
             tagsHeaderLabel.ImageAlign = ContentAlignment.MiddleLeft;
             tagsHeaderLabel.Location = new Point(0, 241);
             tagsHeaderLabel.Margin = new Padding(0, 0, 0, 8);
@@ -572,7 +578,7 @@ namespace FormatForge.App
             // 
             tagImagesCheckBox.Checked = true;
             tagImagesCheckBox.CheckState = CheckState.Checked;
-            tagImagesCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Image, Color.FromArgb(24, 120, 232), 18);
+            tagImagesCheckBox.Image = (Image)resources.GetObject("tagImagesCheckBox.Image");
             tagImagesCheckBox.Location = new Point(0, 0);
             tagImagesCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagImagesCheckBox.Name = "tagImagesCheckBox";
@@ -588,7 +594,7 @@ namespace FormatForge.App
             // 
             tagAudioCheckBox.Checked = true;
             tagAudioCheckBox.CheckState = CheckState.Checked;
-            tagAudioCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Audio, Color.FromArgb(232, 55, 102), 18);
+            tagAudioCheckBox.Image = (Image)resources.GetObject("tagAudioCheckBox.Image");
             tagAudioCheckBox.Location = new Point(0, 28);
             tagAudioCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagAudioCheckBox.Name = "tagAudioCheckBox";
@@ -604,7 +610,7 @@ namespace FormatForge.App
             // 
             tagVideoCheckBox.Checked = true;
             tagVideoCheckBox.CheckState = CheckState.Checked;
-            tagVideoCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Video, Color.FromArgb(138, 65, 226), 18);
+            tagVideoCheckBox.Image = (Image)resources.GetObject("tagVideoCheckBox.Image");
             tagVideoCheckBox.Location = new Point(0, 56);
             tagVideoCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagVideoCheckBox.Name = "tagVideoCheckBox";
@@ -620,7 +626,7 @@ namespace FormatForge.App
             // 
             tagDocumentsCheckBox.Checked = true;
             tagDocumentsCheckBox.CheckState = CheckState.Checked;
-            tagDocumentsCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Document, Color.FromArgb(63, 85, 111), 18);
+            tagDocumentsCheckBox.Image = (Image)resources.GetObject("tagDocumentsCheckBox.Image");
             tagDocumentsCheckBox.Location = new Point(0, 84);
             tagDocumentsCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagDocumentsCheckBox.Name = "tagDocumentsCheckBox";
@@ -636,7 +642,7 @@ namespace FormatForge.App
             // 
             tagPdfCheckBox.Checked = true;
             tagPdfCheckBox.CheckState = CheckState.Checked;
-            tagPdfCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.FromArgb(239, 61, 74), 18);
+            tagPdfCheckBox.Image = (Image)resources.GetObject("tagPdfCheckBox.Image");
             tagPdfCheckBox.Location = new Point(0, 112);
             tagPdfCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagPdfCheckBox.Name = "tagPdfCheckBox";
@@ -652,7 +658,7 @@ namespace FormatForge.App
             // 
             tagConvertedCheckBox.Checked = true;
             tagConvertedCheckBox.CheckState = CheckState.Checked;
-            tagConvertedCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Check, Color.FromArgb(27, 166, 67), 18);
+            tagConvertedCheckBox.Image = (Image)resources.GetObject("tagConvertedCheckBox.Image");
             tagConvertedCheckBox.Location = new Point(0, 140);
             tagConvertedCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagConvertedCheckBox.Name = "tagConvertedCheckBox";
@@ -668,7 +674,7 @@ namespace FormatForge.App
             // 
             tagFailedCheckBox.Checked = true;
             tagFailedCheckBox.CheckState = CheckState.Checked;
-            tagFailedCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Warning, Color.FromArgb(242, 116, 36), 18);
+            tagFailedCheckBox.Image = (Image)resources.GetObject("tagFailedCheckBox.Image");
             tagFailedCheckBox.Location = new Point(0, 168);
             tagFailedCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagFailedCheckBox.Name = "tagFailedCheckBox";
@@ -684,7 +690,7 @@ namespace FormatForge.App
             // 
             tagFavoritesCheckBox.Checked = true;
             tagFavoritesCheckBox.CheckState = CheckState.Checked;
-            tagFavoritesCheckBox.Image = UiIconFactory.CreateIcon(UiIconKind.Plus, Color.FromArgb(238, 172, 22), 18);
+            tagFavoritesCheckBox.Image = (Image)resources.GetObject("tagFavoritesCheckBox.Image");
             tagFavoritesCheckBox.Location = new Point(0, 196);
             tagFavoritesCheckBox.Margin = new Padding(0, 0, 0, 3);
             tagFavoritesCheckBox.Name = "tagFavoritesCheckBox";
@@ -722,7 +728,7 @@ namespace FormatForge.App
             // 
             sidebarSettingsButton.FlatAppearance.BorderSize = 0;
             sidebarSettingsButton.FlatStyle = FlatStyle.Flat;
-            sidebarSettingsButton.Image = UiIconFactory.CreateIcon(UiIconKind.Settings, Color.FromArgb(63, 85, 111), 22);
+            sidebarSettingsButton.Image = (Image)resources.GetObject("sidebarSettingsButton.Image");
             sidebarSettingsButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarSettingsButton.Location = new Point(0, 562);
             sidebarSettingsButton.Margin = new Padding(0, 0, 0, 6);
@@ -739,7 +745,7 @@ namespace FormatForge.App
             // 
             sidebarAboutButton.FlatAppearance.BorderSize = 0;
             sidebarAboutButton.FlatStyle = FlatStyle.Flat;
-            sidebarAboutButton.Image = UiIconFactory.CreateIcon(UiIconKind.Info, Color.FromArgb(63, 85, 111), 22);
+            sidebarAboutButton.Image = (Image)resources.GetObject("sidebarAboutButton.Image");
             sidebarAboutButton.ImageAlign = ContentAlignment.MiddleLeft;
             sidebarAboutButton.Location = new Point(0, 604);
             sidebarAboutButton.Margin = new Padding(0);
@@ -760,19 +766,25 @@ namespace FormatForge.App
             workspacePanel.Dock = DockStyle.Fill;
             workspacePanel.Location = new Point(0, 0);
             workspacePanel.Name = "workspacePanel";
-            workspacePanel.Size = new Size(1108, 604);
+            workspacePanel.Size = new Size(1108, 608);
             workspacePanel.TabIndex = 0;
             // 
             // contentSplit
             // 
             contentSplit.Dock = DockStyle.Fill;
-            contentSplit.Location = new Point(0, 86);
+            contentSplit.Location = new Point(0, 76);
             contentSplit.Name = "contentSplit";
+            // 
+            // contentSplit.Panel1
+            // 
             contentSplit.Panel1.Controls.Add(filesPanel);
             contentSplit.Panel1MinSize = 620;
+            // 
+            // contentSplit.Panel2
+            // 
             contentSplit.Panel2.Controls.Add(detailsPanel);
             contentSplit.Panel2MinSize = 340;
-            contentSplit.Size = new Size(1108, 406);
+            contentSplit.Size = new Size(1108, 420);
             contentSplit.SplitterDistance = 744;
             contentSplit.SplitterWidth = 10;
             contentSplit.TabIndex = 1;
@@ -788,7 +800,7 @@ namespace FormatForge.App
             filesPanel.Location = new Point(0, 0);
             filesPanel.Name = "filesPanel";
             filesPanel.Padding = new Padding(1);
-            filesPanel.Size = new Size(744, 406);
+            filesPanel.Size = new Size(744, 420);
             filesPanel.TabIndex = 0;
             // 
             // filesList
@@ -803,14 +815,12 @@ namespace FormatForge.App
             filesList.Font = new Font("Segoe UI", 9.5F);
             filesList.FullRowSelect = true;
             filesList.GridLines = true;
-            filesList.HideSelection = false;
             filesList.LabelEdit = true;
             filesList.LargeImageList = fileTypeLargeImages;
             filesList.Location = new Point(1, 43);
-            filesList.MultiSelect = true;
             filesList.Name = "filesList";
             filesList.ShowItemToolTips = true;
-            filesList.Size = new Size(742, 362);
+            filesList.Size = new Size(742, 376);
             filesList.SmallImageList = fileTypeImages;
             filesList.TabIndex = 1;
             filesList.UseCompatibleStateImageBehavior = false;
@@ -851,76 +861,64 @@ namespace FormatForge.App
             // 
             // fileContextMenu
             // 
-            fileContextMenu.Items.AddRange(new ToolStripItem[] { contextCutMenuItem, contextCopyMenuItem, contextPasteMenuItem, new ToolStripSeparator(), contextRenameMenuItem, contextDeleteMenuItem, new ToolStripSeparator(), contextPropertiesMenuItem });
+            fileContextMenu.Items.AddRange(new ToolStripItem[] { contextCutMenuItem, contextCopyMenuItem, contextPasteMenuItem, contextRenameMenuItem, contextDeleteMenuItem, contextPropertiesMenuItem });
             fileContextMenu.Name = "fileContextMenu";
-            fileContextMenu.Size = new Size(181, 170);
+            fileContextMenu.Size = new Size(128, 148);
             fileContextMenu.Opening += FileContextMenu_Opening;
             // 
             // contextCutMenuItem
             // 
             contextCutMenuItem.Name = "contextCutMenuItem";
-            contextCutMenuItem.Size = new Size(180, 22);
+            contextCutMenuItem.Size = new Size(127, 22);
             contextCutMenuItem.Text = "Cut";
             contextCutMenuItem.Click += CutMenuItem_Click;
             // 
             // contextCopyMenuItem
             // 
             contextCopyMenuItem.Name = "contextCopyMenuItem";
-            contextCopyMenuItem.Size = new Size(180, 22);
+            contextCopyMenuItem.Size = new Size(127, 22);
             contextCopyMenuItem.Text = "Copy";
             contextCopyMenuItem.Click += CopyMenuItem_Click;
             // 
             // contextPasteMenuItem
             // 
             contextPasteMenuItem.Name = "contextPasteMenuItem";
-            contextPasteMenuItem.Size = new Size(180, 22);
+            contextPasteMenuItem.Size = new Size(127, 22);
             contextPasteMenuItem.Text = "Paste";
             contextPasteMenuItem.Click += PasteMenuItem_Click;
             // 
             // contextRenameMenuItem
             // 
             contextRenameMenuItem.Name = "contextRenameMenuItem";
-            contextRenameMenuItem.Size = new Size(180, 22);
+            contextRenameMenuItem.Size = new Size(127, 22);
             contextRenameMenuItem.Text = "Rename";
             contextRenameMenuItem.Click += RenameMenuItem_Click;
             // 
             // contextDeleteMenuItem
             // 
             contextDeleteMenuItem.Name = "contextDeleteMenuItem";
-            contextDeleteMenuItem.Size = new Size(180, 22);
+            contextDeleteMenuItem.Size = new Size(127, 22);
             contextDeleteMenuItem.Text = "Delete";
             contextDeleteMenuItem.Click += DeleteMenuItem_Click;
             // 
             // contextPropertiesMenuItem
             // 
             contextPropertiesMenuItem.Name = "contextPropertiesMenuItem";
-            contextPropertiesMenuItem.Size = new Size(180, 22);
+            contextPropertiesMenuItem.Size = new Size(127, 22);
             contextPropertiesMenuItem.Text = "Properties";
             contextPropertiesMenuItem.Click += PropertiesMenuItem_Click;
-            // 
-            // fileTypeImages
-            // 
-            fileTypeImages.ColorDepth = ColorDepth.Depth32Bit;
-            fileTypeImages.ImageSize = new Size(24, 24);
-            fileTypeImages.TransparentColor = Color.Transparent;
-            fileTypeImages.Images.Add("file", UiIconFactory.CreateIcon(UiIconKind.Document, Color.FromArgb(63, 85, 111), 24));
-            fileTypeImages.Images.Add("image", UiIconFactory.CreateIcon(UiIconKind.Image, Color.FromArgb(24, 166, 214), 24));
-            fileTypeImages.Images.Add("audio", UiIconFactory.CreateIcon(UiIconKind.Audio, Color.FromArgb(232, 55, 102), 24));
-            fileTypeImages.Images.Add("video", UiIconFactory.CreateIcon(UiIconKind.Video, Color.FromArgb(138, 65, 226), 24));
-            fileTypeImages.Images.Add("document", UiIconFactory.CreateIcon(UiIconKind.Document, Color.FromArgb(63, 85, 111), 24));
-            fileTypeImages.Images.Add("pdf", UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.FromArgb(239, 61, 74), 24));
             // 
             // fileTypeLargeImages
             // 
             fileTypeLargeImages.ColorDepth = ColorDepth.Depth32Bit;
             fileTypeLargeImages.ImageSize = new Size(48, 48);
             fileTypeLargeImages.TransparentColor = Color.Transparent;
-            fileTypeLargeImages.Images.Add("file", UiIconFactory.CreateIcon(UiIconKind.Document, Color.FromArgb(63, 85, 111), 48));
-            fileTypeLargeImages.Images.Add("image", UiIconFactory.CreateIcon(UiIconKind.Image, Color.FromArgb(24, 166, 214), 48));
-            fileTypeLargeImages.Images.Add("audio", UiIconFactory.CreateIcon(UiIconKind.Audio, Color.FromArgb(232, 55, 102), 48));
-            fileTypeLargeImages.Images.Add("video", UiIconFactory.CreateIcon(UiIconKind.Video, Color.FromArgb(138, 65, 226), 48));
-            fileTypeLargeImages.Images.Add("document", UiIconFactory.CreateIcon(UiIconKind.Document, Color.FromArgb(63, 85, 111), 48));
-            fileTypeLargeImages.Images.Add("pdf", UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.FromArgb(239, 61, 74), 48));
+            // 
+            // fileTypeImages
+            // 
+            fileTypeImages.ColorDepth = ColorDepth.Depth32Bit;
+            fileTypeImages.ImageSize = new Size(24, 24);
+            fileTypeImages.TransparentColor = Color.Transparent;
             // 
             // listHeaderPanel
             // 
@@ -934,16 +932,6 @@ namespace FormatForge.App
             listHeaderPanel.Size = new Size(742, 42);
             listHeaderPanel.TabIndex = 0;
             // 
-            // filesTitleLabel
-            // 
-            filesTitleLabel.AutoSize = true;
-            filesTitleLabel.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            filesTitleLabel.Location = new Point(14, 11);
-            filesTitleLabel.Name = "filesTitleLabel";
-            filesTitleLabel.Size = new Size(35, 19);
-            filesTitleLabel.TabIndex = 0;
-            filesTitleLabel.Text = "Files";
-            // 
             // searchTextBox
             // 
             searchTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -954,8 +942,19 @@ namespace FormatForge.App
             searchTextBox.TabIndex = 1;
             searchTextBox.TextChanged += SearchTextBox_TextChanged;
             // 
+            // filesTitleLabel
+            // 
+            filesTitleLabel.AutoSize = true;
+            filesTitleLabel.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            filesTitleLabel.Location = new Point(14, 11);
+            filesTitleLabel.Name = "filesTitleLabel";
+            filesTitleLabel.Size = new Size(38, 19);
+            filesTitleLabel.TabIndex = 0;
+            filesTitleLabel.Text = "Files";
+            // 
             // detailsPanel
             // 
+            detailsPanel.AutoScroll = true;
             detailsPanel.BackColor = Color.White;
             detailsPanel.BorderColor = Color.FromArgb(214, 224, 236);
             detailsPanel.BorderRadius = 9;
@@ -970,43 +969,51 @@ namespace FormatForge.App
             detailsPanel.Location = new Point(0, 0);
             detailsPanel.Name = "detailsPanel";
             detailsPanel.Padding = new Padding(16);
-            detailsPanel.Size = new Size(354, 406);
+            detailsPanel.Size = new Size(354, 420);
             detailsPanel.TabIndex = 0;
-            detailsPanel.AutoScroll = true;
             // 
-            // detailsPreviewPanel
+            // detailsTagChipLabel
             // 
-            detailsPreviewPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            detailsPreviewPanel.BackColor = Color.FromArgb(38, 45, 58);
-            detailsPreviewPanel.BorderColor = Color.FromArgb(38, 45, 58);
-            detailsPreviewPanel.BorderRadius = 9;
-            detailsPreviewPanel.Controls.Add(detailsPreviewIcon);
-            detailsPreviewPanel.Location = new Point(16, 16);
-            detailsPreviewPanel.Name = "detailsPreviewPanel";
-            detailsPreviewPanel.Size = new Size(322, 202);
-            detailsPreviewPanel.TabIndex = 0;
+            detailsTagChipLabel.BackColor = Color.FromArgb(255, 219, 230);
+            detailsTagChipLabel.ForeColor = Color.FromArgb(176, 40, 78);
+            detailsTagChipLabel.Location = new Point(16, 454);
+            detailsTagChipLabel.Name = "detailsTagChipLabel";
+            detailsTagChipLabel.Padding = new Padding(10, 0, 10, 0);
+            detailsTagChipLabel.Size = new Size(82, 28);
+            detailsTagChipLabel.TabIndex = 6;
+            detailsTagChipLabel.Text = "Audio";
+            detailsTagChipLabel.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // detailsPreviewIcon
+            // detailsAddTagButton
             // 
-            detailsPreviewIcon.Dock = DockStyle.Fill;
-            detailsPreviewIcon.Image = UiIconFactory.CreateIcon(UiIconKind.Audio, Color.White, 72);
-            detailsPreviewIcon.Location = new Point(0, 0);
-            detailsPreviewIcon.Name = "detailsPreviewIcon";
-            detailsPreviewIcon.Size = new Size(322, 202);
-            detailsPreviewIcon.SizeMode = PictureBoxSizeMode.Zoom;
-            detailsPreviewIcon.TabIndex = 0;
-            detailsPreviewIcon.TabStop = false;
+            detailsAddTagButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            detailsAddTagButton.FlatAppearance.BorderColor = Color.FromArgb(211, 222, 235);
+            detailsAddTagButton.FlatStyle = FlatStyle.Flat;
+            detailsAddTagButton.Image = (Image)resources.GetObject("detailsAddTagButton.Image");
+            detailsAddTagButton.Location = new Point(302, 418);
+            detailsAddTagButton.Name = "detailsAddTagButton";
+            detailsAddTagButton.Size = new Size(36, 30);
+            detailsAddTagButton.TabIndex = 5;
+            detailsAddTagButton.UseVisualStyleBackColor = true;
             // 
-            // detailsTitleLabel
+            // detailsTagsLabel
             // 
-            detailsTitleLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            detailsTitleLabel.AutoEllipsis = true;
-            detailsTitleLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            detailsTitleLabel.Location = new Point(16, 218);
-            detailsTitleLabel.Name = "detailsTitleLabel";
-            detailsTitleLabel.Size = new Size(322, 26);
-            detailsTitleLabel.TabIndex = 1;
-            detailsTitleLabel.Text = "song.mp3";
+            detailsTagsLabel.AutoSize = true;
+            detailsTagsLabel.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            detailsTagsLabel.Location = new Point(16, 424);
+            detailsTagsLabel.Name = "detailsTagsLabel";
+            detailsTagsLabel.Size = new Size(39, 19);
+            detailsTagsLabel.TabIndex = 4;
+            detailsTagsLabel.Text = "Tags";
+            // 
+            // detailsDividerPanel
+            // 
+            detailsDividerPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            detailsDividerPanel.BackColor = Color.FromArgb(221, 230, 241);
+            detailsDividerPanel.Location = new Point(16, 410);
+            detailsDividerPanel.Name = "detailsDividerPanel";
+            detailsDividerPanel.Size = new Size(322, 1);
+            detailsDividerPanel.TabIndex = 3;
             // 
             // detailsGridPanel
             // 
@@ -1035,7 +1042,7 @@ namespace FormatForge.App
             detailsGridPanel.Size = new Size(322, 148);
             detailsGridPanel.TabIndex = 2;
             // 
-            // details labels
+            // detailsTypeLabel
             // 
             detailsTypeLabel.ForeColor = Color.FromArgb(83, 91, 105);
             detailsTypeLabel.Location = new Point(3, 0);
@@ -1043,54 +1050,81 @@ namespace FormatForge.App
             detailsTypeLabel.Size = new Size(80, 23);
             detailsTypeLabel.TabIndex = 0;
             detailsTypeLabel.Text = "Type:";
+            // 
+            // detailsTypeValueLabel
+            // 
             detailsTypeValueLabel.AutoEllipsis = true;
             detailsTypeValueLabel.Location = new Point(89, 0);
             detailsTypeValueLabel.Name = "detailsTypeValueLabel";
             detailsTypeValueLabel.Size = new Size(230, 23);
             detailsTypeValueLabel.TabIndex = 1;
             detailsTypeValueLabel.Text = "MP3 Audio";
+            // 
+            // detailsSizeLabel
+            // 
             detailsSizeLabel.ForeColor = Color.FromArgb(83, 91, 105);
             detailsSizeLabel.Location = new Point(3, 25);
             detailsSizeLabel.Name = "detailsSizeLabel";
             detailsSizeLabel.Size = new Size(80, 23);
             detailsSizeLabel.TabIndex = 2;
             detailsSizeLabel.Text = "Size:";
+            // 
+            // detailsSizeValueLabel
+            // 
             detailsSizeValueLabel.AutoEllipsis = true;
             detailsSizeValueLabel.Location = new Point(89, 25);
             detailsSizeValueLabel.Name = "detailsSizeValueLabel";
             detailsSizeValueLabel.Size = new Size(230, 23);
             detailsSizeValueLabel.TabIndex = 3;
             detailsSizeValueLabel.Text = "5.21 MB";
+            // 
+            // detailsDurationLabel
+            // 
             detailsDurationLabel.ForeColor = Color.FromArgb(83, 91, 105);
             detailsDurationLabel.Location = new Point(3, 50);
             detailsDurationLabel.Name = "detailsDurationLabel";
             detailsDurationLabel.Size = new Size(80, 23);
             detailsDurationLabel.TabIndex = 4;
             detailsDurationLabel.Text = "Duration:";
+            // 
+            // detailsDurationValueLabel
+            // 
             detailsDurationValueLabel.AutoEllipsis = true;
             detailsDurationValueLabel.Location = new Point(89, 50);
             detailsDurationValueLabel.Name = "detailsDurationValueLabel";
             detailsDurationValueLabel.Size = new Size(230, 23);
             detailsDurationValueLabel.TabIndex = 5;
             detailsDurationValueLabel.Text = "03:42";
+            // 
+            // detailsBitrateLabel
+            // 
             detailsBitrateLabel.ForeColor = Color.FromArgb(83, 91, 105);
             detailsBitrateLabel.Location = new Point(3, 75);
             detailsBitrateLabel.Name = "detailsBitrateLabel";
             detailsBitrateLabel.Size = new Size(80, 23);
             detailsBitrateLabel.TabIndex = 6;
             detailsBitrateLabel.Text = "Bitrate:";
+            // 
+            // detailsBitrateValueLabel
+            // 
             detailsBitrateValueLabel.AutoEllipsis = true;
             detailsBitrateValueLabel.Location = new Point(89, 75);
             detailsBitrateValueLabel.Name = "detailsBitrateValueLabel";
             detailsBitrateValueLabel.Size = new Size(230, 23);
             detailsBitrateValueLabel.TabIndex = 7;
             detailsBitrateValueLabel.Text = "320 kbps";
+            // 
+            // detailsPathLabel
+            // 
             detailsPathLabel.ForeColor = Color.FromArgb(83, 91, 105);
             detailsPathLabel.Location = new Point(3, 100);
             detailsPathLabel.Name = "detailsPathLabel";
             detailsPathLabel.Size = new Size(80, 23);
             detailsPathLabel.TabIndex = 8;
             detailsPathLabel.Text = "Path:";
+            // 
+            // detailsPathValueLabel
+            // 
             detailsPathValueLabel.AutoEllipsis = true;
             detailsPathValueLabel.Location = new Point(89, 100);
             detailsPathValueLabel.Name = "detailsPathValueLabel";
@@ -1098,48 +1132,39 @@ namespace FormatForge.App
             detailsPathValueLabel.TabIndex = 9;
             detailsPathValueLabel.Text = "C:\\Music\\song.mp3";
             // 
-            // detailsDividerPanel
+            // detailsTitleLabel
             // 
-            detailsDividerPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            detailsDividerPanel.BackColor = Color.FromArgb(221, 230, 241);
-            detailsDividerPanel.Location = new Point(16, 410);
-            detailsDividerPanel.Name = "detailsDividerPanel";
-            detailsDividerPanel.Size = new Size(322, 1);
-            detailsDividerPanel.TabIndex = 3;
+            detailsTitleLabel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            detailsTitleLabel.AutoEllipsis = true;
+            detailsTitleLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            detailsTitleLabel.Location = new Point(16, 218);
+            detailsTitleLabel.Name = "detailsTitleLabel";
+            detailsTitleLabel.Size = new Size(322, 26);
+            detailsTitleLabel.TabIndex = 1;
+            detailsTitleLabel.Text = "song.mp3";
             // 
-            // detailsTagsLabel
+            // detailsPreviewPanel
             // 
-            detailsTagsLabel.AutoSize = true;
-            detailsTagsLabel.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            detailsTagsLabel.Location = new Point(16, 424);
-            detailsTagsLabel.Name = "detailsTagsLabel";
-            detailsTagsLabel.Size = new Size(37, 19);
-            detailsTagsLabel.TabIndex = 4;
-            detailsTagsLabel.Text = "Tags";
+            detailsPreviewPanel.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            detailsPreviewPanel.BackColor = Color.FromArgb(38, 45, 58);
+            detailsPreviewPanel.BorderColor = Color.FromArgb(38, 45, 58);
+            detailsPreviewPanel.BorderRadius = 9;
+            detailsPreviewPanel.Controls.Add(detailsPreviewIcon);
+            detailsPreviewPanel.Location = new Point(16, 16);
+            detailsPreviewPanel.Name = "detailsPreviewPanel";
+            detailsPreviewPanel.Size = new Size(322, 202);
+            detailsPreviewPanel.TabIndex = 0;
             // 
-            // detailsAddTagButton
+            // detailsPreviewIcon
             // 
-            detailsAddTagButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            detailsAddTagButton.FlatAppearance.BorderColor = Color.FromArgb(211, 222, 235);
-            detailsAddTagButton.FlatStyle = FlatStyle.Flat;
-            detailsAddTagButton.Image = UiIconFactory.CreateIcon(UiIconKind.Plus, Color.FromArgb(63, 85, 111), 16);
-            detailsAddTagButton.Location = new Point(302, 418);
-            detailsAddTagButton.Name = "detailsAddTagButton";
-            detailsAddTagButton.Size = new Size(36, 30);
-            detailsAddTagButton.TabIndex = 5;
-            detailsAddTagButton.UseVisualStyleBackColor = true;
-            // 
-            // detailsTagChipLabel
-            // 
-            detailsTagChipLabel.BackColor = Color.FromArgb(255, 219, 230);
-            detailsTagChipLabel.ForeColor = Color.FromArgb(176, 40, 78);
-            detailsTagChipLabel.Location = new Point(16, 454);
-            detailsTagChipLabel.Name = "detailsTagChipLabel";
-            detailsTagChipLabel.Padding = new Padding(10, 0, 10, 0);
-            detailsTagChipLabel.Size = new Size(82, 28);
-            detailsTagChipLabel.TabIndex = 6;
-            detailsTagChipLabel.Text = "Audio";
-            detailsTagChipLabel.TextAlign = ContentAlignment.MiddleCenter;
+            detailsPreviewIcon.Dock = DockStyle.Fill;
+            detailsPreviewIcon.Image = (Image)resources.GetObject("detailsPreviewIcon.Image");
+            detailsPreviewIcon.Location = new Point(0, 0);
+            detailsPreviewIcon.Name = "detailsPreviewIcon";
+            detailsPreviewIcon.Size = new Size(322, 202);
+            detailsPreviewIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            detailsPreviewIcon.TabIndex = 0;
+            detailsPreviewIcon.TabStop = false;
             // 
             // optionsPanel
             // 
@@ -1148,7 +1173,7 @@ namespace FormatForge.App
             optionsPanel.BorderRadius = 9;
             optionsPanel.Controls.Add(optionsLayout);
             optionsPanel.Dock = DockStyle.Bottom;
-            optionsPanel.Location = new Point(0, 492);
+            optionsPanel.Location = new Point(0, 496);
             optionsPanel.Margin = new Padding(0, 10, 0, 0);
             optionsPanel.Name = "optionsPanel";
             optionsPanel.Padding = new Padding(14);
@@ -1184,26 +1209,14 @@ namespace FormatForge.App
             outputPanel.Size = new Size(447, 78);
             outputPanel.TabIndex = 0;
             // 
-            // outputDirectoryLabel
+            // openOutputFolderCheckBox
             // 
-            outputDirectoryLabel.AutoSize = true;
-            outputDirectoryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            outputDirectoryLabel.Image = UiIconFactory.CreateIcon(UiIconKind.Folder, Color.FromArgb(63, 85, 111), 16);
-            outputDirectoryLabel.ImageAlign = ContentAlignment.MiddleLeft;
-            outputDirectoryLabel.Location = new Point(0, 2);
-            outputDirectoryLabel.Name = "outputDirectoryLabel";
-            outputDirectoryLabel.Size = new Size(120, 15);
-            outputDirectoryLabel.TabIndex = 0;
-            outputDirectoryLabel.Text = "      Output Directory";
-            // 
-            // outputDirectoryTextBox
-            // 
-            outputDirectoryTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            outputDirectoryTextBox.Location = new Point(0, 27);
-            outputDirectoryTextBox.Name = "outputDirectoryTextBox";
-            outputDirectoryTextBox.Size = new Size(330, 23);
-            outputDirectoryTextBox.TabIndex = 1;
-            outputDirectoryTextBox.Text = @"C:\FormatForge\Converted";
+            openOutputFolderCheckBox.Location = new Point(0, 58);
+            openOutputFolderCheckBox.Name = "openOutputFolderCheckBox";
+            openOutputFolderCheckBox.Size = new Size(220, 19);
+            openOutputFolderCheckBox.TabIndex = 3;
+            openOutputFolderCheckBox.Text = "Open output folder after conversion";
+            openOutputFolderCheckBox.UseVisualStyleBackColor = true;
             // 
             // browseOutputButton
             // 
@@ -1218,15 +1231,26 @@ namespace FormatForge.App
             browseOutputButton.UseVisualStyleBackColor = true;
             browseOutputButton.Click += BrowseOutputButton_Click;
             // 
-            // openOutputFolderCheckBox
+            // outputDirectoryTextBox
             // 
-            openOutputFolderCheckBox.AutoSize = true;
-            openOutputFolderCheckBox.Location = new Point(0, 58);
-            openOutputFolderCheckBox.Name = "openOutputFolderCheckBox";
-            openOutputFolderCheckBox.Size = new Size(220, 19);
-            openOutputFolderCheckBox.TabIndex = 3;
-            openOutputFolderCheckBox.Text = "Open output folder after conversion";
-            openOutputFolderCheckBox.UseVisualStyleBackColor = true;
+            outputDirectoryTextBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            outputDirectoryTextBox.Location = new Point(0, 27);
+            outputDirectoryTextBox.Name = "outputDirectoryTextBox";
+            outputDirectoryTextBox.Size = new Size(330, 23);
+            outputDirectoryTextBox.TabIndex = 1;
+            outputDirectoryTextBox.Text = "C:\\FormatForge\\Converted";
+            // 
+            // outputDirectoryLabel
+            // 
+            outputDirectoryLabel.AutoSize = true;
+            outputDirectoryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            outputDirectoryLabel.Image = (Image)resources.GetObject("outputDirectoryLabel.Image");
+            outputDirectoryLabel.ImageAlign = ContentAlignment.MiddleLeft;
+            outputDirectoryLabel.Location = new Point(0, 2);
+            outputDirectoryLabel.Name = "outputDirectoryLabel";
+            outputDirectoryLabel.Size = new Size(121, 15);
+            outputDirectoryLabel.TabIndex = 0;
+            outputDirectoryLabel.Text = "      Output Directory";
             // 
             // conversionOptionsPanel
             // 
@@ -1240,6 +1264,37 @@ namespace FormatForge.App
             conversionOptionsPanel.Size = new Size(264, 78);
             conversionOptionsPanel.TabIndex = 1;
             // 
+            // overwriteExistingFilesCheckBox
+            // 
+            overwriteExistingFilesCheckBox.Location = new Point(0, 60);
+            overwriteExistingFilesCheckBox.Name = "overwriteExistingFilesCheckBox";
+            overwriteExistingFilesCheckBox.Size = new Size(140, 19);
+            overwriteExistingFilesCheckBox.TabIndex = 3;
+            overwriteExistingFilesCheckBox.Text = "Overwrite existing files";
+            overwriteExistingFilesCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // keepOriginalDateCheckBox
+            // 
+            keepOriginalDateCheckBox.Checked = true;
+            keepOriginalDateCheckBox.CheckState = CheckState.Checked;
+            keepOriginalDateCheckBox.Location = new Point(0, 42);
+            keepOriginalDateCheckBox.Name = "keepOriginalDateCheckBox";
+            keepOriginalDateCheckBox.Size = new Size(119, 19);
+            keepOriginalDateCheckBox.TabIndex = 2;
+            keepOriginalDateCheckBox.Text = "Keep original date";
+            keepOriginalDateCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // preserveMetadataCheckBox
+            // 
+            preserveMetadataCheckBox.Checked = true;
+            preserveMetadataCheckBox.CheckState = CheckState.Checked;
+            preserveMetadataCheckBox.Location = new Point(0, 21);
+            preserveMetadataCheckBox.Name = "preserveMetadataCheckBox";
+            preserveMetadataCheckBox.Size = new Size(124, 19);
+            preserveMetadataCheckBox.TabIndex = 1;
+            preserveMetadataCheckBox.Text = "Preserve metadata";
+            preserveMetadataCheckBox.UseVisualStyleBackColor = true;
+            // 
             // optionsLabel
             // 
             optionsLabel.AutoSize = true;
@@ -1249,40 +1304,6 @@ namespace FormatForge.App
             optionsLabel.Size = new Size(50, 15);
             optionsLabel.TabIndex = 0;
             optionsLabel.Text = "Options";
-            // 
-            // preserveMetadataCheckBox
-            // 
-            preserveMetadataCheckBox.AutoSize = true;
-            preserveMetadataCheckBox.Checked = true;
-            preserveMetadataCheckBox.CheckState = CheckState.Checked;
-            preserveMetadataCheckBox.Location = new Point(0, 24);
-            preserveMetadataCheckBox.Name = "preserveMetadataCheckBox";
-            preserveMetadataCheckBox.Size = new Size(124, 19);
-            preserveMetadataCheckBox.TabIndex = 1;
-            preserveMetadataCheckBox.Text = "Preserve metadata";
-            preserveMetadataCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // keepOriginalDateCheckBox
-            // 
-            keepOriginalDateCheckBox.AutoSize = true;
-            keepOriginalDateCheckBox.Checked = true;
-            keepOriginalDateCheckBox.CheckState = CheckState.Checked;
-            keepOriginalDateCheckBox.Location = new Point(0, 44);
-            keepOriginalDateCheckBox.Name = "keepOriginalDateCheckBox";
-            keepOriginalDateCheckBox.Size = new Size(119, 19);
-            keepOriginalDateCheckBox.TabIndex = 2;
-            keepOriginalDateCheckBox.Text = "Keep original date";
-            keepOriginalDateCheckBox.UseVisualStyleBackColor = true;
-            // 
-            // overwriteExistingFilesCheckBox
-            // 
-            overwriteExistingFilesCheckBox.AutoSize = true;
-            overwriteExistingFilesCheckBox.Location = new Point(0, 64);
-            overwriteExistingFilesCheckBox.Name = "overwriteExistingFilesCheckBox";
-            overwriteExistingFilesCheckBox.Size = new Size(140, 19);
-            overwriteExistingFilesCheckBox.TabIndex = 3;
-            overwriteExistingFilesCheckBox.Text = "Overwrite existing files";
-            overwriteExistingFilesCheckBox.UseVisualStyleBackColor = true;
             // 
             // progressPanel
             // 
@@ -1295,15 +1316,15 @@ namespace FormatForge.App
             progressPanel.Size = new Size(351, 78);
             progressPanel.TabIndex = 2;
             // 
-            // progressTitleLabel
+            // progressTextLabel
             // 
-            progressTitleLabel.AutoSize = true;
-            progressTitleLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            progressTitleLabel.Location = new Point(0, 2);
-            progressTitleLabel.Name = "progressTitleLabel";
-            progressTitleLabel.Size = new Size(55, 15);
-            progressTitleLabel.TabIndex = 0;
-            progressTitleLabel.Text = "Progress";
+            progressTextLabel.AutoSize = true;
+            progressTextLabel.ForeColor = Color.FromArgb(53, 63, 79);
+            progressTextLabel.Location = new Point(0, 58);
+            progressTextLabel.Name = "progressTextLabel";
+            progressTextLabel.Size = new Size(137, 15);
+            progressTextLabel.TabIndex = 2;
+            progressTextLabel.Text = "Ready to convert 0 file(s)";
             // 
             // progressBar
             // 
@@ -1313,15 +1334,15 @@ namespace FormatForge.App
             progressBar.Size = new Size(338, 18);
             progressBar.TabIndex = 1;
             // 
-            // progressTextLabel
+            // progressTitleLabel
             // 
-            progressTextLabel.AutoSize = true;
-            progressTextLabel.ForeColor = Color.FromArgb(53, 63, 79);
-            progressTextLabel.Location = new Point(0, 58);
-            progressTextLabel.Name = "progressTextLabel";
-            progressTextLabel.Size = new Size(136, 15);
-            progressTextLabel.TabIndex = 2;
-            progressTextLabel.Text = "Ready to convert 0 file(s)";
+            progressTitleLabel.AutoSize = true;
+            progressTitleLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            progressTitleLabel.Location = new Point(0, 2);
+            progressTitleLabel.Name = "progressTitleLabel";
+            progressTitleLabel.Size = new Size(55, 15);
+            progressTitleLabel.TabIndex = 0;
+            progressTitleLabel.Text = "Progress";
             // 
             // conversionBarPanel
             // 
@@ -1342,24 +1363,44 @@ namespace FormatForge.App
             // 
             // categoryFlow
             // 
+            categoryFlow.Controls.Add(categoryImagesButton);
+            categoryFlow.Controls.Add(categoryAudioButton);
+            categoryFlow.Controls.Add(categoryVideoButton);
+            categoryFlow.Controls.Add(categoryDocumentsButton);
             categoryFlow.Dock = DockStyle.Fill;
-            categoryFlow.FlowDirection = FlowDirection.LeftToRight;
             categoryFlow.Location = new Point(12, 12);
             categoryFlow.Name = "categoryFlow";
             categoryFlow.Size = new Size(454, 52);
             categoryFlow.TabIndex = 0;
             categoryFlow.WrapContents = false;
             // 
-            // category buttons
+            // categoryImagesButton
             // 
-            ConfigureCategoryButton(categoryImagesButton, "Images", UiIconKind.Image, Color.FromArgb(24, 120, 232), "Images");
-            ConfigureCategoryButton(categoryAudioButton, "Audio", UiIconKind.Audio, Color.FromArgb(232, 55, 102), "Audio");
-            ConfigureCategoryButton(categoryVideoButton, "Video", UiIconKind.Video, Color.FromArgb(138, 65, 226), "Video");
-            ConfigureCategoryButton(categoryDocumentsButton, "Docs", UiIconKind.Document, Color.FromArgb(239, 92, 47), "Documents");
-            categoryFlow.Controls.Add(categoryImagesButton);
-            categoryFlow.Controls.Add(categoryAudioButton);
-            categoryFlow.Controls.Add(categoryVideoButton);
-            categoryFlow.Controls.Add(categoryDocumentsButton);
+            categoryImagesButton.Location = new Point(3, 3);
+            categoryImagesButton.Name = "categoryImagesButton";
+            categoryImagesButton.Size = new Size(75, 23);
+            categoryImagesButton.TabIndex = 0;
+            // 
+            // categoryAudioButton
+            // 
+            categoryAudioButton.Location = new Point(84, 3);
+            categoryAudioButton.Name = "categoryAudioButton";
+            categoryAudioButton.Size = new Size(75, 23);
+            categoryAudioButton.TabIndex = 1;
+            // 
+            // categoryVideoButton
+            // 
+            categoryVideoButton.Location = new Point(165, 3);
+            categoryVideoButton.Name = "categoryVideoButton";
+            categoryVideoButton.Size = new Size(75, 23);
+            categoryVideoButton.TabIndex = 2;
+            // 
+            // categoryDocumentsButton
+            // 
+            categoryDocumentsButton.Location = new Point(246, 3);
+            categoryDocumentsButton.Name = "categoryDocumentsButton";
+            categoryDocumentsButton.Size = new Size(75, 23);
+            categoryDocumentsButton.TabIndex = 3;
             // 
             // outputFormatPanel
             // 
@@ -1372,16 +1413,6 @@ namespace FormatForge.App
             outputFormatPanel.Size = new Size(216, 52);
             outputFormatPanel.TabIndex = 1;
             // 
-            // outputFormatLabel
-            // 
-            outputFormatLabel.AutoSize = true;
-            outputFormatLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            outputFormatLabel.Location = new Point(10, 0);
-            outputFormatLabel.Name = "outputFormatLabel";
-            outputFormatLabel.Size = new Size(91, 15);
-            outputFormatLabel.TabIndex = 0;
-            outputFormatLabel.Text = "Output Format:";
-            // 
             // outputFormatComboBox
             // 
             outputFormatComboBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
@@ -1393,12 +1424,22 @@ namespace FormatForge.App
             outputFormatComboBox.Size = new Size(192, 23);
             outputFormatComboBox.TabIndex = 1;
             // 
+            // outputFormatLabel
+            // 
+            outputFormatLabel.AutoSize = true;
+            outputFormatLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            outputFormatLabel.Location = new Point(10, 0);
+            outputFormatLabel.Name = "outputFormatLabel";
+            outputFormatLabel.Size = new Size(93, 15);
+            outputFormatLabel.TabIndex = 0;
+            outputFormatLabel.Text = "Output Format:";
+            // 
             // advancedButton
             // 
             advancedButton.Dock = DockStyle.Right;
             advancedButton.FlatAppearance.BorderColor = Color.FromArgb(211, 222, 235);
             advancedButton.FlatStyle = FlatStyle.Flat;
-            advancedButton.Image = UiIconFactory.CreateIcon(UiIconKind.Settings, Color.FromArgb(63, 85, 111), 20);
+            advancedButton.Image = (Image)resources.GetObject("advancedButton.Image");
             advancedButton.Location = new Point(682, 12);
             advancedButton.Margin = new Padding(8, 0, 8, 0);
             advancedButton.Name = "advancedButton";
@@ -1417,7 +1458,7 @@ namespace FormatForge.App
             mergeImagesPdfButton.FlatStyle = FlatStyle.Flat;
             mergeImagesPdfButton.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             mergeImagesPdfButton.ForeColor = Color.White;
-            mergeImagesPdfButton.Image = UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.White, 22);
+            mergeImagesPdfButton.Image = (Image)resources.GetObject("mergeImagesPdfButton.Image");
             mergeImagesPdfButton.Location = new Point(812, 12);
             mergeImagesPdfButton.Name = "mergeImagesPdfButton";
             mergeImagesPdfButton.Size = new Size(142, 52);
@@ -1435,7 +1476,7 @@ namespace FormatForge.App
             convertNowButton.FlatStyle = FlatStyle.Flat;
             convertNowButton.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             convertNowButton.ForeColor = Color.White;
-            convertNowButton.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.White, 26);
+            convertNowButton.Image = (Image)resources.GetObject("convertNowButton.Image");
             convertNowButton.Location = new Point(954, 12);
             convertNowButton.Name = "convertNowButton";
             convertNowButton.Size = new Size(142, 52);
@@ -1457,15 +1498,15 @@ namespace FormatForge.App
             headerPanel.Size = new Size(1296, 82);
             headerPanel.TabIndex = 0;
             // 
-            // appIcon
+            // appSubtitle
             // 
-            appIcon.Image = UiIconFactory.CreateAppLogoBitmap(64);
-            appIcon.Location = new Point(14, 8);
-            appIcon.Name = "appIcon";
-            appIcon.Size = new Size(64, 64);
-            appIcon.SizeMode = PictureBoxSizeMode.Zoom;
-            appIcon.TabIndex = 0;
-            appIcon.TabStop = false;
+            appSubtitle.AutoSize = true;
+            appSubtitle.ForeColor = Color.FromArgb(74, 86, 104);
+            appSubtitle.Location = new Point(92, 51);
+            appSubtitle.Name = "appSubtitle";
+            appSubtitle.Size = new Size(220, 15);
+            appSubtitle.TabIndex = 2;
+            appSubtitle.Text = "Convert, organize and manage your files";
             // 
             // appTitle
             // 
@@ -1474,63 +1515,85 @@ namespace FormatForge.App
             appTitle.ForeColor = Color.FromArgb(10, 14, 22);
             appTitle.Location = new Point(88, 12);
             appTitle.Name = "appTitle";
-            appTitle.Size = new Size(185, 37);
+            appTitle.Size = new Size(184, 37);
             appTitle.TabIndex = 1;
             appTitle.Text = "FormatForge";
             // 
-            // appSubtitle
+            // appIcon
             // 
-            appSubtitle.AutoSize = true;
-            appSubtitle.ForeColor = Color.FromArgb(74, 86, 104);
-            appSubtitle.Location = new Point(92, 51);
-            appSubtitle.Name = "appSubtitle";
-            appSubtitle.Size = new Size(229, 15);
-            appSubtitle.TabIndex = 2;
-            appSubtitle.Text = "Convert, organize and manage your files";
+            appIcon.Image = (Image)resources.GetObject("appIcon.Image");
+            appIcon.Location = new Point(14, 8);
+            appIcon.Name = "appIcon";
+            appIcon.Size = new Size(64, 64);
+            appIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            appIcon.TabIndex = 0;
+            appIcon.TabStop = false;
             // 
             // statusStrip
             // 
             statusStrip.BackColor = Color.FromArgb(250, 252, 255);
             statusStrip.Items.AddRange(new ToolStripItem[] { filesCountStatusLabel, statusSeparatorLabel1, selectedCountStatusLabel, statusSeparatorLabel2, checkedCountStatusLabel, statusTextLabel, versionStatusLabel });
-            statusStrip.Location = new Point(0, 734);
+            statusStrip.Location = new Point(0, 738);
             statusStrip.Name = "statusStrip";
+            statusStrip.Size = new Size(1320, 22);
             statusStrip.SizingGrip = false;
-            statusStrip.Size = new Size(1320, 26);
             statusStrip.TabIndex = 2;
             statusStrip.Text = "statusStrip";
             // 
-            // status strip labels
+            // filesCountStatusLabel
             // 
             filesCountStatusLabel.Name = "filesCountStatusLabel";
-            filesCountStatusLabel.Size = new Size(45, 21);
+            filesCountStatusLabel.Size = new Size(45, 17);
             filesCountStatusLabel.Text = "0 file(s)";
+            // 
+            // statusSeparatorLabel1
+            // 
             statusSeparatorLabel1.ForeColor = Color.FromArgb(160, 171, 186);
             statusSeparatorLabel1.Name = "statusSeparatorLabel1";
-            statusSeparatorLabel1.Size = new Size(10, 21);
+            statusSeparatorLabel1.Size = new Size(10, 17);
             statusSeparatorLabel1.Text = "|";
+            // 
+            // selectedCountStatusLabel
+            // 
             selectedCountStatusLabel.Name = "selectedCountStatusLabel";
-            selectedCountStatusLabel.Size = new Size(59, 21);
+            selectedCountStatusLabel.Size = new Size(59, 17);
             selectedCountStatusLabel.Text = "0 selected";
+            // 
+            // statusSeparatorLabel2
+            // 
             statusSeparatorLabel2.ForeColor = Color.FromArgb(160, 171, 186);
             statusSeparatorLabel2.Name = "statusSeparatorLabel2";
-            statusSeparatorLabel2.Size = new Size(10, 21);
+            statusSeparatorLabel2.Size = new Size(10, 17);
             statusSeparatorLabel2.Text = "|";
+            // 
+            // checkedCountStatusLabel
+            // 
             checkedCountStatusLabel.Name = "checkedCountStatusLabel";
-            checkedCountStatusLabel.Size = new Size(55, 21);
+            checkedCountStatusLabel.Size = new Size(56, 17);
             checkedCountStatusLabel.Text = "0 queued";
+            // 
+            // statusTextLabel
+            // 
             statusTextLabel.Name = "statusTextLabel";
+            statusTextLabel.Size = new Size(1017, 17);
             statusTextLabel.Spring = true;
             statusTextLabel.Text = "Ready";
             statusTextLabel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // versionStatusLabel
+            // 
             versionStatusLabel.Name = "versionStatusLabel";
-            versionStatusLabel.Size = new Size(116, 21);
-            versionStatusLabel.Text = "FormatForge v1.0.0";
+            versionStatusLabel.Size = new Size(108, 17);
+            versionStatusLabel.Text = "FormatForge v1.1.0";
             // 
-            // dialogs
+            // openFileDialog
             // 
-            openFileDialog.Filter = "Supported files|*.jpg;*.jpeg;*.png;*.webp;*.bmp;*.gif;*.mp3;*.wav;*.flac;*.aac;*.mp4;*.mkv;*.avi;*.mov;*.doc;*.docx;*.txt;*.pdf;*.html|All files|*.*";
+            openFileDialog.Filter = resources.GetString("openFileDialog.Filter");
             openFileDialog.Multiselect = true;
             openFileDialog.Title = "Select files";
+            // 
+            // folderBrowserDialog
+            // 
             folderBrowserDialog.Description = "Select a folder";
             folderBrowserDialog.UseDescriptionForTitle = true;
             // 
@@ -1545,10 +1608,10 @@ namespace FormatForge.App
             Controls.Add(mainMenu);
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 9F);
-            Icon = UiIconFactory.TryLoadApplicationIcon();
+            Icon = (Icon)resources.GetObject("$this.Icon");
             KeyPreview = true;
             MainMenuStrip = mainMenu;
-            MinimumSize = new Size(1120, 680);
+            MinimumSize = new Size(1200, 680);
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "FormatForge";
@@ -1574,9 +1637,9 @@ namespace FormatForge.App
             listHeaderPanel.PerformLayout();
             detailsPanel.ResumeLayout(false);
             detailsPanel.PerformLayout();
+            detailsGridPanel.ResumeLayout(false);
             detailsPreviewPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)detailsPreviewIcon).EndInit();
-            detailsGridPanel.ResumeLayout(false);
             optionsPanel.ResumeLayout(false);
             optionsLayout.ResumeLayout(false);
             outputPanel.ResumeLayout(false);

@@ -8,13 +8,16 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <filesystem>
 #include <algorithm>
+#include <atomic>
 #include <thread>
 #include <sstream>
 #include <cwctype>
+#include <mutex>
 
 #include "video_converter.h"
 
@@ -23,6 +26,16 @@
 #pragma comment(lib, "Ole32.lib")
 
 namespace fs = std::filesystem;
+
+static std::atomic_bool g_video_cancel_requested = false;
+static std::mutex g_video_process_mutex;
+static HANDLE g_video_process = nullptr;
+static char g_video_last_error[4096] = {};
+
+static void set_video_last_error(const std::string& message)
+{
+    strncpy_s(g_video_last_error, message.c_str(), _TRUNCATE);
+}
 
 
 // ============================================================
@@ -48,24 +61,21 @@ static std::string wide_to_utf8(const wchar_t* text)
     if (size <= 0)
         return std::string();
 
-    std::string result(
-        size - 1,
-        '\0'
+    std::string result(size, '\0');
+
+    WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        text,
+        -1,
+        result.data(),
+        size,
+        nullptr,
+        nullptr
     );
 
-    if (!result.empty())
-    {
-        WideCharToMultiByte(
-            CP_UTF8,
-            0,
-            text,
-            -1,
-            &result[0],
-            size,
-            nullptr,
-            nullptr
-        );
-    }
+    if (!result.empty() && result.back() == '\0')
+        result.pop_back();
 
     return result;
 }
@@ -93,22 +103,19 @@ static std::wstring utf8_to_wide(
     if (size <= 0)
         return std::wstring();
 
-    std::wstring result(
-        size - 1,
-        L'\0'
+    std::wstring result(size, L'\0');
+
+    MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        text.c_str(),
+        -1,
+        result.data(),
+        size
     );
 
-    if (!result.empty())
-    {
-        MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            text.c_str(),
-            -1,
-            &result[0],
-            size
-        );
-    }
+    if (!result.empty() && result.back() == L'\0')
+        result.pop_back();
 
     return result;
 }
@@ -276,6 +283,8 @@ struct ProcessResult
     std::wstring output;
 
     bool started = false;
+
+    bool cancelled = false;
 };
 
 
@@ -473,6 +482,11 @@ static ProcessResult run_process_capture(
 
     result.started = true;
 
+    {
+        std::lock_guard<std::mutex> lock(g_video_process_mutex);
+        g_video_process = process_info.hProcess;
+    }
+
 
     // --------------------------------------------------------
     // READ OUTPUT IN PARALLEL
@@ -520,10 +534,17 @@ static ProcessResult run_process_capture(
     // WAIT FOR PROCESS
     // --------------------------------------------------------
 
-    WaitForSingleObject(
-        process_info.hProcess,
-        INFINITE
-    );
+    while (WaitForSingleObject(process_info.hProcess, 100) == WAIT_TIMEOUT)
+    {
+        if (g_video_cancel_requested.load())
+        {
+            TerminateProcess(process_info.hProcess, ERROR_CANCELLED);
+            result.cancelled = true;
+            break;
+        }
+    }
+
+    WaitForSingleObject(process_info.hProcess, INFINITE);
 
 
     // --------------------------------------------------------
@@ -538,6 +559,14 @@ static ProcessResult run_process_capture(
     // --------------------------------------------------------
 
     DWORD exit_code = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(g_video_process_mutex);
+        if (g_video_process == process_info.hProcess)
+        {
+            g_video_process = nullptr;
+        }
+    }
 
     if (!GetExitCodeProcess(
         process_info.hProcess,
@@ -934,28 +963,28 @@ public:
 
 
         // ----------------------------------------------------
-        // SEARCH PATH
+        // SEARCH FORMATFORGE/BUNDLED DIRECTORIES
         // ----------------------------------------------------
 
         ffmpeg_path =
-            find_using_search_path(
+            find_in_directories(
                 L"ffmpeg.exe"
             );
 
         ffprobe_path =
-            find_using_search_path(
+            find_in_directories(
                 L"ffprobe.exe"
             );
 
 
         // ----------------------------------------------------
-        // SEARCH CUSTOM DIRECTORIES
+        // SEARCH PATH AS A FALLBACK
         // ----------------------------------------------------
 
         if (ffmpeg_path.empty())
         {
             ffmpeg_path =
-                find_in_directories(
+                find_using_search_path(
                     L"ffmpeg.exe"
                 );
         }
@@ -963,7 +992,7 @@ public:
         if (ffprobe_path.empty())
         {
             ffprobe_path =
-                find_in_directories(
+                find_using_search_path(
                     L"ffprobe.exe"
                 );
         }
@@ -1542,8 +1571,8 @@ public:
     int convert_video(
         const std::wstring& input,
         const std::wstring& output,
-        const std::wstring& format = L"mp4",
-        int quality = 23)
+        const std::wstring& format,
+        const FF_VIDEO_OPTIONS& options)
     {
         if (!initialized)
         {
@@ -1551,6 +1580,7 @@ public:
                 "FFmpeg not initialized!\n"
             );
 
+            set_video_last_error("FFmpeg was not found.");
             return -1;
         }
 
@@ -1572,6 +1602,7 @@ public:
                 ).c_str()
             );
 
+            set_video_last_error("The input video file does not exist.");
             return -1;
         }
 
@@ -1608,6 +1639,7 @@ public:
                         ).c_str()
                     );
 
+                    set_video_last_error("The output directory could not be created.");
                     return -1;
                 }
             }
@@ -1618,11 +1650,7 @@ public:
         // QUALITY VALIDATION
         // ----------------------------------------------------
 
-        if (quality < 18 ||
-            quality > 28)
-        {
-            quality = 23;
-        }
+        int quality = std::clamp(options.quality, 18, 28);
 
 
         // ----------------------------------------------------
@@ -1634,8 +1662,7 @@ public:
 
         // General options
 
-        arguments +=
-            L"-y ";
+        arguments += options.overwrite ? L"-y " : L"-n ";
 
         arguments +=
             L"-nostdin ";
@@ -1676,6 +1703,26 @@ public:
         arguments +=
             L"-map 0:a:0? ";
 
+        if (options.width > 0 || options.height > 0)
+        {
+            arguments += L"-vf ";
+
+            if (options.width > 0 && options.height > 0)
+            {
+                arguments += L"scale=" + std::to_wstring(options.width) +
+                    L":" + std::to_wstring(options.height) +
+                    L":force_original_aspect_ratio=decrease:force_divisible_by=2 ";
+            }
+            else if (options.width > 0)
+            {
+                arguments += L"scale=" + std::to_wstring(options.width) + L":-2 ";
+            }
+            else
+            {
+                arguments += L"scale=-2:" + std::to_wstring(options.height) + L" ";
+            }
+        }
+
 
         // ----------------------------------------------------
         // CODECS
@@ -1688,16 +1735,14 @@ public:
             arguments +=
                 L"-c:v libx264 ";
 
-            arguments +=
-                L"-crf ";
-
-            arguments +=
-                std::to_wstring(
-                    quality
-                );
-
-            arguments +=
-                L" ";
+            if (options.video_bitrate_kbps > 0)
+            {
+                arguments += L"-b:v " + std::to_wstring(options.video_bitrate_kbps) + L"k ";
+            }
+            else
+            {
+                arguments += L"-crf " + std::to_wstring(quality) + L" ";
+            }
 
             arguments +=
                 L"-preset medium ";
@@ -1705,8 +1750,7 @@ public:
             arguments +=
                 L"-c:a aac ";
 
-            arguments +=
-                L"-b:a 192k ";
+            arguments += L"-b:a " + std::to_wstring(options.audio_bitrate_kbps) + L"k ";
 
 
             // Better compatibility.
@@ -1727,39 +1771,48 @@ public:
             arguments +=
                 L"-c:v mpeg4 ";
 
-            arguments +=
-                L"-q:v 5 ";
+            if (options.video_bitrate_kbps > 0)
+            {
+                arguments += L"-b:v " + std::to_wstring(options.video_bitrate_kbps) + L"k ";
+            }
+            else
+            {
+                arguments += L"-q:v 5 ";
+            }
 
             arguments +=
                 L"-c:a libmp3lame ";
 
-            arguments +=
-                L"-b:a 192k ";
+            arguments += L"-b:a " + std::to_wstring(options.audio_bitrate_kbps) + L"k ";
         }
         else if (format == L"webm")
         {
             arguments +=
                 L"-c:v libvpx-vp9 ";
 
-            arguments +=
-                L"-crf ";
+            arguments += L"-crf " + std::to_wstring(quality) + L" ";
 
-            arguments +=
-                std::to_wstring(
-                    quality
-                );
-
-            arguments +=
-                L" ";
-
-            arguments +=
-                L"-b:v 0 ";
+            if (options.video_bitrate_kbps > 0)
+            {
+                arguments += L"-b:v " + std::to_wstring(options.video_bitrate_kbps) + L"k ";
+            }
+            else
+            {
+                arguments += L"-b:v 0 ";
+            }
 
             arguments +=
                 L"-c:a libopus ";
 
-            arguments +=
-                L"-b:a 128k ";
+            arguments += L"-b:a " + std::to_wstring(options.audio_bitrate_kbps) + L"k ";
+        }
+        else if (format == L"wmv")
+        {
+            arguments += L"-c:v wmv2 ";
+            arguments += L"-b:v " + std::to_wstring(
+                options.video_bitrate_kbps > 0 ? options.video_bitrate_kbps : 5000) + L"k ";
+            arguments += L"-c:a wmav2 ";
+            arguments += L"-b:a " + std::to_wstring(options.audio_bitrate_kbps) + L"k ";
         }
         else
         {
@@ -1770,6 +1823,7 @@ public:
                 ).c_str()
             );
 
+            set_video_last_error("The selected video output format is not supported.");
             return -1;
         }
 
@@ -1778,8 +1832,7 @@ public:
         // METADATA
         // ----------------------------------------------------
 
-        arguments +=
-            L"-map_metadata 0 ";
+        arguments += options.preserve_metadata ? L"-map_metadata 0 " : L"-map_metadata -1 ";
 
 
         // ----------------------------------------------------
@@ -1841,6 +1894,16 @@ public:
                 "Could not start FFmpeg.\n"
             );
 
+            set_video_last_error("FFmpeg could not be started.");
+            return -1;
+        }
+
+
+        if (result.cancelled)
+        {
+            set_video_last_error("Video conversion was cancelled.");
+            std::error_code remove_error;
+            fs::remove(output_path, remove_error);
             return -1;
         }
 
@@ -1875,6 +1938,12 @@ public:
                 result.exit_code
             );
 
+            std::string message = wide_to_utf8(result.output.c_str());
+            if (message.empty())
+            {
+                message = "FFmpeg could not convert the selected video stream.";
+            }
+            set_video_last_error(message);
             return result.exit_code;
         }
 
@@ -1883,9 +1952,15 @@ public:
         // VERIFY OUTPUT
         // ----------------------------------------------------
 
-        if (!fs::is_regular_file(
-            output_path,
-            ec))
+        bool output_exists = fs::is_regular_file(output_path, ec);
+        std::uintmax_t output_size = 0;
+
+        if (output_exists && !ec)
+        {
+            output_size = fs::file_size(output_path, ec);
+        }
+
+        if (!output_exists || ec || output_size == 0)
         {
             printf(
                 "\nERROR: FFmpeg returned success, "
@@ -1899,6 +1974,7 @@ public:
                 ).c_str()
             );
 
+            set_video_last_error("FFmpeg finished without creating a valid video file.");
             return -1;
         }
 
@@ -1916,6 +1992,7 @@ public:
         );
 
 
+        set_video_last_error("");
         return 0;
     }
 
@@ -2170,12 +2247,18 @@ public:
             // CONVERT
             // ------------------------------------------------
 
+            FF_VIDEO_OPTIONS options = {};
+            options.quality = quality;
+            options.audio_bitrate_kbps = 192;
+            options.preserve_metadata = 1;
+            options.overwrite = 1;
+
             int conversion_result =
                 convert_video(
                     input,
                     output_path.wstring(),
                     format,
-                    quality
+                    options
                 );
 
 
@@ -2687,16 +2770,11 @@ public:
     }
 };
 
-extern "C" VIDEOCONVERTER_API int ff_video_convert(
-    const wchar_t* input_file,
-    const wchar_t* output_file,
+static std::wstring normalize_video_format(
     const wchar_t* output_format)
 {
-    if (!input_file || !output_file || !output_format)
-    {
-        printf("Invalid video conversion arguments.\n");
-        return 0;
-    }
+    if (!output_format)
+        return L"";
 
     std::wstring format(output_format);
 
@@ -2715,25 +2793,120 @@ extern "C" VIDEOCONVERTER_API int ff_video_convert(
         }
     );
 
+    return format;
+}
+
+
+extern "C" VIDEOCONVERTER_API int ff_video_convert_ex(
+    const wchar_t* input_file,
+    const wchar_t* output_file,
+    const wchar_t* output_format,
+    const FF_VIDEO_OPTIONS* options)
+{
+    g_video_cancel_requested.store(false);
+    set_video_last_error("");
+
+    if (!input_file || !output_file || !output_format || !options)
+    {
+        printf("Invalid video conversion arguments.\n");
+        set_video_last_error("Invalid video conversion arguments.");
+        return 0;
+    }
+
+    std::wstring format = normalize_video_format(output_format);
+
     if (format.empty())
     {
         printf("Invalid video output format.\n");
+        set_video_last_error("The video output format is empty.");
         return 0;
     }
+
+    FF_VIDEO_OPTIONS normalized = *options;
+
+    if (normalized.quality < 18 || normalized.quality > 28)
+        normalized.quality = 23;
+
+    if (normalized.video_bitrate_kbps < 0 ||
+        normalized.video_bitrate_kbps > 200000)
+    {
+        normalized.video_bitrate_kbps = 0;
+    }
+
+    if (normalized.audio_bitrate_kbps <= 0)
+        normalized.audio_bitrate_kbps = 192;
+
+    normalized.audio_bitrate_kbps =
+        std::clamp(normalized.audio_bitrate_kbps, 32, 1000);
+
+    if (normalized.width < 0 || normalized.width > 16384)
+        normalized.width = 0;
+
+    if (normalized.height < 0 || normalized.height > 16384)
+        normalized.height = 0;
+
+    normalized.preserve_metadata =
+        normalized.preserve_metadata ? 1 : 0;
+
+    normalized.overwrite =
+        normalized.overwrite ? 1 : 0;
 
     FFmpegManager ffmpeg;
 
     if (!ffmpeg.is_available())
     {
         printf("FFmpeg not initialized!\n");
+        set_video_last_error("FFmpeg was not found.");
         return 0;
     }
 
     return ffmpeg.convert_video(
         input_file,
         output_file,
-        format
+        format,
+        normalized
     ) == 0 ? 1 : 0;
+}
+
+
+extern "C" VIDEOCONVERTER_API const char* ff_video_get_last_error(void)
+{
+    return g_video_last_error;
+}
+
+
+extern "C" VIDEOCONVERTER_API void ff_video_cancel(void)
+{
+    g_video_cancel_requested.store(true);
+
+    std::lock_guard<std::mutex> lock(g_video_process_mutex);
+    if (g_video_process)
+    {
+        TerminateProcess(g_video_process, ERROR_CANCELLED);
+    }
+}
+
+
+extern "C" VIDEOCONVERTER_API int ff_video_convert(
+    const wchar_t* input_file,
+    const wchar_t* output_file,
+    const wchar_t* output_format)
+{
+    FF_VIDEO_OPTIONS options = {};
+    options.quality = 23;
+    options.video_bitrate_kbps = 0;
+    options.audio_bitrate_kbps = 192;
+    options.width = 0;
+    options.height = 0;
+    options.preserve_metadata = 1;
+    options.overwrite = 1;
+
+    return ff_video_convert_ex(
+        input_file,
+        output_file,
+        output_format,
+        &options
+    );
 }
 
 

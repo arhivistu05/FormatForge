@@ -1,0 +1,46 @@
+﻿FormatForge Terms and Conditions
+Version 1.1.0
+
+Please read these terms before installing or using FormatForge.
+
+1. Acceptance
+
+By installing or using FormatForge, you agree to these terms. If you do not agree, do not install or use the application.
+
+2. Purpose
+
+FormatForge is a Windows desktop file conversion tool for images, audio, video, documents, and PDF-related workflows.
+
+3. Third-Party Components
+
+FormatForge may use or interact with third-party components, including FFmpeg, Microsoft Office, and PythonRuntime.
+
+FFmpeg is used for audio and video conversion workflows. If FFmpeg is bundled with a release, it must be distributed according to its own license terms. If it is not bundled, the user must install FFmpeg separately.
+
+Microsoft Office is not bundled with FormatForge. Office-based conversion features require Microsoft Office to be installed separately on the user's Windows system and are subject to Microsoft's license terms.
+
+PythonRuntime and Python packages may be used for PDF and document conversion features. They remain subject to their respective licenses.
+
+4. User Files
+
+FormatForge processes files selected by the user. The user is responsible for keeping backups of important files before conversion. The developer is not responsible for data loss, file corruption, or unexpected conversion results.
+
+5. No Warranty
+
+FormatForge is provided as-is, without warranties of any kind. The developer does not guarantee that the application will be error-free, uninterrupted, or suitable for every file type or workflow.
+
+6. Limitation of Liability
+
+To the maximum extent allowed by applicable law, the developer is not liable for damages caused by installing, using, or being unable to use FormatForge.
+
+7. Updates
+
+FormatForge may check GitHub Releases to notify the user when a newer version is available. The user decides whether to download and install updates.
+
+8. Ownership
+
+FormatForge is created by ./F4N3. Third-party components remain owned by their respective authors or organizations.
+
+9. Changes to These Terms
+
+These terms may be updated in future releases. The terms included with a release apply to that release.

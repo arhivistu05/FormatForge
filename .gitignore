@@ -1,4 +1,4 @@
-# Build output
+﻿# Build output
 **/bin/
 **/obj/
 **/x64/
@@ -45,3 +45,7 @@ FFmpeg/
 # Local converted files
 Converted/
 *.tmp
+
+# Installer build output
+Installer/Build/
+Installer/Output/

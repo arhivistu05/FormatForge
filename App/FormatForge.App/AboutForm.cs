@@ -16,6 +16,7 @@ internal sealed class AboutForm : Form
     private void InitializeAboutForm()
     {
         ThemePalette palette = ThemeManager.GetPalette(theme);
+        WindowChromeTheme.Apply(this, palette);
         Text = "About FormatForge";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;

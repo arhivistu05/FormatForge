@@ -16,7 +16,10 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <atomic>
 #include <cwctype>
+#include <mutex>
+#include <thread>
 
 #include "audio_converter.h"
 
@@ -25,6 +28,16 @@
 #pragma comment(lib, "Ole32.lib")
 
 namespace fs = std::filesystem;
+
+static std::atomic_bool g_audio_cancel_requested = false;
+static std::mutex g_audio_process_mutex;
+static HANDLE g_audio_process = nullptr;
+static char g_audio_last_error[4096] = {};
+
+static void set_audio_last_error(const std::string& message)
+{
+    strncpy_s(g_audio_last_error, message.c_str(), _TRUNCATE);
+}
 
 // ============================================================
 // WINDOWS WCHAR -> UTF-8
@@ -152,10 +165,19 @@ static std::wstring quote_windows_argument(const std::wstring& value)
 // RUN PROCESS WITH UNICODE PATHS
 // ============================================================
 
-static int run_process(
+struct ProcessResult
+{
+    int exit_code = -1;
+    bool started = false;
+    bool cancelled = false;
+    std::string output;
+};
+
+static ProcessResult run_process(
     const std::wstring& executable,
     const std::wstring& arguments)
 {
+    ProcessResult result;
     std::wstring command_line =
         quote_windows_argument(executable);
 
@@ -172,8 +194,33 @@ static int run_process(
 
     command_buffer.push_back(L'\0');
 
+    SECURITY_ATTRIBUTES security_attributes = {};
+    security_attributes.nLength = sizeof(security_attributes);
+    security_attributes.bInheritHandle = TRUE;
+
+    HANDLE read_pipe = nullptr;
+    HANDLE write_pipe = nullptr;
+
+    if (!CreatePipe(&read_pipe, &write_pipe, &security_attributes, 0))
+    {
+        set_audio_last_error("Could not create the FFmpeg output pipe.");
+        return result;
+    }
+
+    if (!SetHandleInformation(read_pipe, HANDLE_FLAG_INHERIT, 0))
+    {
+        CloseHandle(read_pipe);
+        CloseHandle(write_pipe);
+        set_audio_last_error("Could not configure the FFmpeg output pipe.");
+        return result;
+    }
+
     STARTUPINFOW startup_info = {};
     startup_info.cb = sizeof(startup_info);
+    startup_info.dwFlags = STARTF_USESTDHANDLES;
+    startup_info.hStdOutput = write_pipe;
+    startup_info.hStdError = write_pipe;
+    startup_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
 
     PROCESS_INFORMATION process_info = {};
 
@@ -182,29 +229,70 @@ static int run_process(
         command_buffer.data(),
         nullptr,
         nullptr,
-        FALSE,
-        CREATE_NO_WINDOW,
+        TRUE,
+        CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
         nullptr,
         nullptr,
         &startup_info,
         &process_info
     );
 
+    CloseHandle(write_pipe);
+
     if (!created)
     {
         DWORD error = GetLastError();
+        CloseHandle(read_pipe);
+        char message[256] = {};
+        sprintf_s(message, "Could not start FFmpeg. Windows error: %lu", static_cast<unsigned long>(error));
+        set_audio_last_error(message);
+        return result;
+    }
 
-        printf(
-            "CreateProcessW failed. Windows error: %lu\n",
-            static_cast<unsigned long>(error)
-        );
+    result.started = true;
 
-        return -1;
+    {
+        std::lock_guard<std::mutex> lock(g_audio_process_mutex);
+        g_audio_process = process_info.hProcess;
+    }
+
+    std::thread reader_thread(
+        [&result, read_pipe]()
+        {
+            char buffer[4096] = {};
+            DWORD bytes_read = 0;
+
+            while (ReadFile(read_pipe, buffer, sizeof(buffer), &bytes_read, nullptr) && bytes_read > 0)
+            {
+                result.output.append(buffer, bytes_read);
+            }
+
+            CloseHandle(read_pipe);
+        }
+    );
+
+    while (WaitForSingleObject(process_info.hProcess, 100) == WAIT_TIMEOUT)
+    {
+        if (g_audio_cancel_requested.load())
+        {
+            TerminateProcess(process_info.hProcess, ERROR_CANCELLED);
+            result.cancelled = true;
+            break;
+        }
     }
 
     WaitForSingleObject(process_info.hProcess, INFINITE);
+    reader_thread.join();
 
     DWORD exit_code = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(g_audio_process_mutex);
+        if (g_audio_process == process_info.hProcess)
+        {
+            g_audio_process = nullptr;
+        }
+    }
 
     if (!GetExitCodeProcess(
         process_info.hProcess,
@@ -212,13 +300,14 @@ static int run_process(
     {
         CloseHandle(process_info.hThread);
         CloseHandle(process_info.hProcess);
-        return -1;
+        return result;
     }
 
     CloseHandle(process_info.hThread);
     CloseHandle(process_info.hProcess);
 
-    return static_cast<int>(exit_code);
+    result.exit_code = static_cast<int>(exit_code);
+    return result;
 }
 
 // ============================================================
@@ -300,16 +389,77 @@ public:
 
     std::vector<std::wstring> get_common_locations()
     {
-        return
+        std::vector<std::wstring> locations;
+
+        auto add_location =
+            [&locations](const fs::path& path)
+            {
+                if (path.empty())
+                    return;
+
+                std::error_code ec;
+                fs::path absolute_path = fs::absolute(path, ec);
+                std::wstring value = ec ? path.wstring() : absolute_path.wstring();
+
+                if (std::find(locations.begin(), locations.end(), value) == locations.end())
+                {
+                    locations.push_back(value);
+                }
+            };
+
+        wchar_t environment_path[32768] = {};
+        DWORD environment_length = GetEnvironmentVariableW(
+            L"FFMPEG_BIN",
+            environment_path,
+            static_cast<DWORD>(sizeof(environment_path) / sizeof(wchar_t)));
+
+        if (environment_length > 0 &&
+            environment_length < sizeof(environment_path) / sizeof(wchar_t))
         {
-            L"C:\\FFmpeg\\bin",
-            L"C:\\Program Files\\FFmpeg\\bin",
-            L"C:\\Program Files (x86)\\FFmpeg\\bin",
-            L"F:\\FormatForge\\FFmpeg\\bin",
-            L".\\FFmpeg\\bin",
-            L".\\bin\\FFmpeg",
-            L"C:\\ffmpeg\\bin"
-        };
+            add_location(environment_path);
+        }
+
+        wchar_t module_path[32768] = {};
+        DWORD module_length = GetModuleFileNameW(
+            nullptr,
+            module_path,
+            static_cast<DWORD>(sizeof(module_path) / sizeof(wchar_t)));
+
+        if (module_length > 0 &&
+            module_length < sizeof(module_path) / sizeof(wchar_t))
+        {
+            fs::path current = fs::path(module_path).parent_path();
+
+            for (int level = 0; level < 6 && !current.empty(); ++level)
+            {
+                add_location(current / L"FFmpeg" / L"bin");
+                add_location(current / L"bin" / L"FFmpeg");
+                add_location(current / L"bin");
+
+                fs::path parent = current.parent_path();
+                if (parent == current)
+                    break;
+
+                current = parent;
+            }
+        }
+
+        std::error_code ec;
+        fs::path working_directory = fs::current_path(ec);
+        if (!ec)
+        {
+            add_location(working_directory / L"FFmpeg" / L"bin");
+            add_location(working_directory / L"bin" / L"FFmpeg");
+            add_location(working_directory / L"bin");
+        }
+
+        add_location(L"F:\\FormatForge\\FFmpeg\\bin");
+        add_location(L"C:\\FFmpeg\\bin");
+        add_location(L"C:\\ffmpeg\\bin");
+        add_location(L"C:\\Program Files\\FFmpeg\\bin");
+        add_location(L"C:\\Program Files (x86)\\FFmpeg\\bin");
+
+        return locations;
     }
 
     // ========================================================
@@ -318,48 +468,37 @@ public:
 
     bool initialize()
     {
-        // 1. PATH
-        ffmpeg_path = find_in_path(L"ffmpeg.exe");
-        ffprobe_path = find_in_path(L"ffprobe.exe");
+        // Prefer the runtime shipped with FormatForge. PATH is a fallback.
+        auto common_paths = get_common_locations();
 
-        // 2. Common locations
-        if (ffmpeg_path.empty() || ffprobe_path.empty())
+        for (const auto& directory : common_paths)
         {
-            auto common_paths = get_common_locations();
+            fs::path ffmpeg_test = fs::path(directory) / L"ffmpeg.exe";
+            fs::path ffprobe_test = fs::path(directory) / L"ffprobe.exe";
+            std::error_code ec;
 
-            for (const auto& directory : common_paths)
+            if (ffmpeg_path.empty() && fs::is_regular_file(ffmpeg_test, ec))
             {
-                fs::path ffmpeg_test =
-                    fs::path(directory) / L"ffmpeg.exe";
-
-                fs::path ffprobe_test =
-                    fs::path(directory) / L"ffprobe.exe";
-
-                std::error_code ec;
-
-                if (ffmpeg_path.empty() &&
-                    fs::exists(ffmpeg_test, ec))
-                {
-                    ffmpeg_path = ffmpeg_test.wstring();
-                }
-
-                if (ffprobe_path.empty() &&
-                    fs::exists(ffprobe_test, ec))
-                {
-                    ffprobe_path = ffprobe_test.wstring();
-                }
-
-                if (!ffmpeg_path.empty() &&
-                    !ffprobe_path.empty())
-                {
-                    break;
-                }
+                ffmpeg_path = ffmpeg_test.wstring();
             }
+
+            ec.clear();
+            if (ffprobe_path.empty() && fs::is_regular_file(ffprobe_test, ec))
+            {
+                ffprobe_path = ffprobe_test.wstring();
+            }
+
+            if (!ffmpeg_path.empty() && !ffprobe_path.empty())
+                break;
         }
 
-        initialized =
-            !ffmpeg_path.empty() &&
-            !ffprobe_path.empty();
+        if (ffmpeg_path.empty())
+            ffmpeg_path = find_in_path(L"ffmpeg.exe");
+
+        if (ffprobe_path.empty())
+            ffprobe_path = find_in_path(L"ffprobe.exe");
+
+        initialized = !ffmpeg_path.empty();
 
         if (initialized)
         {
@@ -369,10 +508,8 @@ public:
                 wide_to_utf8(ffmpeg_path.c_str()).c_str()
             );
 
-            printf(
-                "  ffprobe: %s\n\n",
-                wide_to_utf8(ffprobe_path.c_str()).c_str()
-            );
+            printf("  ffprobe: %s\n\n",
+                ffprobe_path.empty() ? "not found (optional)" : wide_to_utf8(ffprobe_path.c_str()).c_str());
         }
 
         return initialized;
@@ -459,15 +596,32 @@ public:
     int convert_audio(
         const std::wstring& input,
         const std::wstring& output,
-        const std::wstring& format = L"mp3",
-        int quality = 2,
-        bool preserve_metadata = true,
-        bool show_progress = false)
+        const std::wstring& format,
+        const FF_AUDIO_OPTIONS& options)
     {
         if (!initialized)
         {
             printf("FFmpeg not initialized!\n");
+            set_audio_last_error("FFmpeg was not found.");
             return -1;
+        }
+
+        std::error_code file_error;
+        if (!fs::is_regular_file(fs::path(input), file_error))
+        {
+            set_audio_last_error("The input media file does not exist.");
+            return -1;
+        }
+
+        fs::path output_path(output);
+        if (!output_path.parent_path().empty())
+        {
+            fs::create_directories(output_path.parent_path(), file_error);
+            if (file_error)
+            {
+                set_audio_last_error("The output directory could not be created.");
+                return -1;
+            }
         }
 
         std::wstring arguments;
@@ -476,12 +630,16 @@ public:
         // GENERAL OPTIONS
         // ====================================================
 
-        arguments += L"-y ";
-
-        if (!show_progress)
+        if (options.overwrite)
         {
-            arguments += L"-hide_banner -loglevel error ";
+            arguments += L"-y ";
         }
+        else
+        {
+            arguments += L"-n ";
+        }
+
+        arguments += L"-nostdin -hide_banner -loglevel error ";
 
         // ====================================================
         // INPUT
@@ -491,6 +649,10 @@ public:
         arguments += quote_windows_argument(input);
         arguments += L" ";
 
+        arguments += L"-map 0:a:";
+        arguments += std::to_wstring(options.audio_stream_index);
+        arguments += L" -vn -sn -dn ";
+
         // ====================================================
         // CODEC
         // ====================================================
@@ -498,20 +660,34 @@ public:
         if (format == L"mp3")
         {
             arguments += L"-c:a libmp3lame ";
-            arguments += L"-q:a ";
-            arguments += std::to_wstring(quality);
-            arguments += L" ";
+
+            if (options.mp3_vbr)
+            {
+                arguments += L"-q:a ";
+                arguments += std::to_wstring(options.quality);
+                arguments += L" ";
+            }
+            else
+            {
+                arguments += L"-b:a ";
+                arguments += std::to_wstring(options.bitrate_kbps);
+                arguments += L"k ";
+            }
         }
         else if (format == L"aac" ||
             format == L"m4a")
         {
             arguments += L"-c:a aac ";
-            arguments += L"-b:a 192k ";
+            arguments += L"-b:a ";
+            arguments += std::to_wstring(options.bitrate_kbps);
+            arguments += L"k ";
         }
         else if (format == L"flac")
         {
             arguments += L"-c:a flac ";
-            arguments += L"-compression_level 8 ";
+            arguments += L"-compression_level ";
+            arguments += std::to_wstring(options.flac_compression_level);
+            arguments += L" ";
         }
         else if (format == L"wav")
         {
@@ -520,12 +696,16 @@ public:
         else if (format == L"ogg")
         {
             arguments += L"-c:a libvorbis ";
-            arguments += L"-q:a 4 ";
+            arguments += L"-q:a ";
+            arguments += std::to_wstring(options.quality);
+            arguments += L" ";
         }
         else if (format == L"opus")
         {
             arguments += L"-c:a libopus ";
-            arguments += L"-b:a 128k ";
+            arguments += L"-b:a ";
+            arguments += std::to_wstring(options.bitrate_kbps);
+            arguments += L"k ";
         }
         else
         {
@@ -534,16 +714,43 @@ public:
                 wide_to_utf8(format.c_str()).c_str()
             );
 
+            set_audio_last_error("The selected audio output format is not supported.");
             return -1;
+        }
+
+        // ====================================================
+        // SAMPLE RATE
+        // ====================================================
+
+        if (options.sample_rate > 0)
+        {
+            arguments += L"-ar ";
+            arguments += std::to_wstring(options.sample_rate);
+            arguments += L" ";
+        }
+
+        // ====================================================
+        // CHANNELS
+        // ====================================================
+
+        if (options.channels > 0)
+        {
+            arguments += L"-ac ";
+            arguments += std::to_wstring(options.channels);
+            arguments += L" ";
         }
 
         // ====================================================
         // METADATA
         // ====================================================
 
-        if (preserve_metadata)
+        if (options.preserve_metadata)
         {
             arguments += L"-map_metadata 0 ";
+        }
+        else
+        {
+            arguments += L"-map_metadata -1 ";
         }
 
         // ====================================================
@@ -570,21 +777,57 @@ public:
         // RUN FFMPEG
         // ====================================================
 
-        int result =
+        ProcessResult process_result =
             run_process(
                 ffmpeg_path,
                 arguments
             );
 
-        if (result != 0)
+        if (!process_result.started)
+        {
+            return -1;
+        }
+
+        if (process_result.cancelled)
+        {
+            set_audio_last_error("Audio conversion was cancelled.");
+            std::error_code remove_error;
+            fs::remove(output_path, remove_error);
+            return -1;
+        }
+
+        if (process_result.exit_code != 0)
         {
             printf(
                 "FFmpeg error code: %d\n",
-                result
+                process_result.exit_code
             );
+
+            std::string message = process_result.output;
+            if (message.empty())
+            {
+                message = "FFmpeg could not extract or convert the selected audio stream.";
+            }
+            set_audio_last_error(message);
+            return process_result.exit_code;
         }
 
-        return result;
+        bool output_exists = fs::is_regular_file(output_path, file_error);
+        std::uintmax_t output_size = 0;
+
+        if (output_exists && !file_error)
+        {
+            output_size = fs::file_size(output_path, file_error);
+        }
+
+        if (!output_exists || file_error || output_size == 0)
+        {
+            set_audio_last_error("FFmpeg finished without creating a valid audio file.");
+            return -1;
+        }
+
+        set_audio_last_error("");
+        return 0;
     }
 
     // ========================================================
@@ -818,12 +1061,23 @@ public:
             // CONVERSION
             // =================================================
 
+            FF_AUDIO_OPTIONS options = {};
+            options.bitrate_kbps = 192;
+            options.sample_rate = 0;
+            options.channels = 0;
+            options.quality = quality;
+            options.audio_stream_index = 0;
+            options.preserve_metadata = 1;
+            options.overwrite = 1;
+            options.mp3_vbr = 1;
+            options.flac_compression_level = 8;
+
             int result =
                 convert_audio(
                     input,
                     output_path.wstring(),
                     format,
-                    quality
+                    options
                 );
 
             if (result == 0)
@@ -857,20 +1111,16 @@ public:
     }
 };
 
-extern "C" AUDIOCONVERTER_API int ff_audio_convert(
-    const wchar_t* input_file,
-    const wchar_t* output_file,
+static std::wstring normalize_audio_format(
     const wchar_t* output_format)
 {
-    if (!input_file || !output_file || !output_format)
-    {
-        printf("Invalid audio conversion arguments.\n");
-        return 0;
-    }
+    if (!output_format)
+        return L"";
 
     std::wstring format(output_format);
 
-    if (!format.empty() && format.front() == L'.')
+    if (!format.empty() &&
+        format.front() == L'.')
     {
         format.erase(format.begin());
     }
@@ -881,15 +1131,91 @@ extern "C" AUDIOCONVERTER_API int ff_audio_convert(
         format.begin(),
         [](wchar_t c)
         {
-            return static_cast<wchar_t>(std::towlower(c));
+            return static_cast<wchar_t>(
+                std::towlower(c)
+                );
         }
     );
+
+    return format;
+}
+
+
+// ============================================================
+// EXTENDED AUDIO CONVERSION API
+// ============================================================
+
+extern "C" AUDIOCONVERTER_API int ff_audio_convert_ex(
+    const wchar_t* input_file,
+    const wchar_t* output_file,
+    const wchar_t* output_format,
+    const FF_AUDIO_OPTIONS* options)
+{
+    if (!input_file ||
+        !output_file ||
+        !output_format ||
+        !options)
+    {
+        printf("Invalid audio conversion arguments.\n");
+        set_audio_last_error("Invalid audio conversion arguments.");
+        return 0;
+    }
+
+    std::wstring format =
+        normalize_audio_format(output_format);
 
     if (format.empty())
     {
         printf("Invalid audio output format.\n");
+        set_audio_last_error("The audio output format is empty.");
         return 0;
     }
+
+    FF_AUDIO_OPTIONS normalized = *options;
+
+    if (normalized.bitrate_kbps <= 0)
+        normalized.bitrate_kbps = 192;
+
+    normalized.bitrate_kbps = std::clamp(normalized.bitrate_kbps, 32, 1000);
+
+    if (normalized.sample_rate != 0 &&
+        (normalized.sample_rate < 8000 || normalized.sample_rate > 384000))
+    {
+        normalized.sample_rate = 0;
+    }
+
+    if (normalized.channels < 0 ||
+        normalized.channels > 2)
+    {
+        normalized.channels = 0;
+    }
+
+    if (normalized.quality < 0 ||
+        normalized.quality > 9)
+    {
+        normalized.quality = 2;
+    }
+
+    if (normalized.audio_stream_index < 0)
+        normalized.audio_stream_index = 0;
+
+    normalized.preserve_metadata =
+        normalized.preserve_metadata ? 1 : 0;
+
+    normalized.overwrite =
+        normalized.overwrite ? 1 : 0;
+
+    normalized.mp3_vbr =
+        normalized.mp3_vbr ? 1 : 0;
+
+    if (normalized.flac_compression_level < 0 ||
+        normalized.flac_compression_level > 12)
+    {
+        normalized.flac_compression_level = 8;
+    }
+
+    g_audio_cancel_requested.store(false);
+    set_audio_last_error("");
 
     FFmpegManager ffmpeg;
 
@@ -902,9 +1228,62 @@ extern "C" AUDIOCONVERTER_API int ff_audio_convert(
     return ffmpeg.convert_audio(
         input_file,
         output_file,
-        format
+        format,
+        normalized
     ) == 0 ? 1 : 0;
 }
+
+
+extern "C" AUDIOCONVERTER_API const char* ff_audio_get_last_error(void)
+{
+    return g_audio_last_error;
+}
+
+
+extern "C" AUDIOCONVERTER_API void ff_audio_cancel(void)
+{
+    g_audio_cancel_requested.store(true);
+
+    std::lock_guard<std::mutex> lock(g_audio_process_mutex);
+    if (g_audio_process)
+    {
+        TerminateProcess(g_audio_process, ERROR_CANCELLED);
+    }
+}
+
+
+// ============================================================
+// LEGACY AUDIO CONVERSION API
+// ============================================================
+
+extern "C" AUDIOCONVERTER_API int ff_audio_convert(
+    const wchar_t* input_file,
+    const wchar_t* output_file,
+    const wchar_t* output_format)
+{
+    FF_AUDIO_OPTIONS options = {};
+
+    options.bitrate_kbps = 192;
+    options.sample_rate = 0;
+    options.channels = 0;
+
+    options.quality = 2;
+    options.audio_stream_index = 0;
+
+    options.preserve_metadata = 1;
+    options.overwrite = 1;
+
+    options.mp3_vbr = 1;
+    options.flac_compression_level = 8;
+
+    return ff_audio_convert_ex(
+        input_file,
+        output_file,
+        output_format,
+        &options
+    );
+}
+
 
 // ============================================================
 // SELECT INPUT FILES

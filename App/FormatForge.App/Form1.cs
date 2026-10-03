@@ -21,11 +21,14 @@ namespace FormatForge.App
         private bool changingTagFilters;
         private bool refreshingOutputFormatOptions;
         private bool startupChecksRan;
+        private AppThemeMode? appliedTheme;
         private Image? currentPreviewImage;
 
         public Form1()
         {
             InitializeComponent();
+            mainSplit.Visible = false;
+            contentSplit.Visible = false;
             ConfigureRuntimeUi();
         }
 
@@ -44,6 +47,8 @@ namespace FormatForge.App
             convertNowButton.Text = "  Convert";
             convertNowButton.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.White, 26);
             mergeImagesPdfButton.Image = UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.White, 22);
+            ConfigureCategoryButtons();
+            ConfigureOptionTextLayout();
             detailsPreviewIcon.Dock = DockStyle.Fill;
             detailsPreviewIcon.Location = new Point(0, 0);
             detailsPreviewIcon.SizeMode = PictureBoxSizeMode.Zoom;
@@ -76,6 +81,47 @@ namespace FormatForge.App
             {
                 statusTextLabel.Text = "Native converters unavailable: " + nativeError;
             }
+        }
+
+        private void ConfigureCategoryButtons()
+        {
+            ConfigureCategoryButton(categoryImagesButton, "Images", UiIconKind.Image, Color.FromArgb(24, 120, 232));
+            ConfigureCategoryButton(categoryAudioButton, "Audio", UiIconKind.Audio, Color.FromArgb(232, 55, 102));
+            ConfigureCategoryButton(categoryVideoButton, "Video", UiIconKind.Video, Color.FromArgb(138, 65, 226));
+            ConfigureCategoryButton(categoryDocumentsButton, "Docs", UiIconKind.Document, Color.FromArgb(242, 95, 46));
+        }
+
+        private static void ConfigureCategoryButton(Button button, string text, UiIconKind iconKind, Color iconColor)
+        {
+            button.AutoSize = false;
+            button.Size = new Size(100, 44);
+            button.Margin = new Padding(3);
+            button.Padding = new Padding(7, 0, 3, 0);
+            button.Text = text;
+            button.Image = UiIconFactory.CreateIcon(iconKind, iconColor, 20);
+            button.ImageAlign = ContentAlignment.MiddleLeft;
+            button.TextAlign = ContentAlignment.MiddleLeft;
+            button.TextImageRelation = TextImageRelation.ImageBeforeText;
+            button.UseVisualStyleBackColor = false;
+        }
+
+        private void ConfigureOptionTextLayout()
+        {
+            openOutputFolderCheckBox.AutoSize = false;
+            openOutputFolderCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            openOutputFolderCheckBox.Size = new Size(420, 19);
+
+            preserveMetadataCheckBox.AutoSize = false;
+            preserveMetadataCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            preserveMetadataCheckBox.Size = new Size(240, 19);
+
+            keepOriginalDateCheckBox.AutoSize = false;
+            keepOriginalDateCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            keepOriginalDateCheckBox.Size = new Size(240, 19);
+
+            overwriteExistingFilesCheckBox.AutoSize = false;
+            overwriteExistingFilesCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            overwriteExistingFilesCheckBox.Size = new Size(240, 19);
         }
 
         private void RegisterTagCheckBoxes()
@@ -129,9 +175,11 @@ namespace FormatForge.App
 
         private void ApplyTheme()
         {
-            ThemePalette palette = ThemeManager.GetPalette(conversionSettings.Theme);
-            ThemeManager.Apply(this, conversionSettings.Theme);
-            ThemeManager.Apply(fileContextMenu, conversionSettings.Theme);
+            AppThemeMode theme = conversionSettings.Theme;
+            bool themeChanged = appliedTheme.HasValue && appliedTheme.Value != theme;
+            ThemePalette palette = ThemeManager.GetPalette(theme);
+            ThemeManager.Apply(this, theme);
+            ThemeManager.Apply(fileContextMenu, theme);
 
             shellPanel.BackColor = palette.Window;
             workspacePanel.BackColor = palette.Window;
@@ -148,17 +196,17 @@ namespace FormatForge.App
             sidebarSeparatorBottom.BackColor = palette.Separator;
 
             convertNowButton.BackColor = palette.Primary;
-            convertNowButton.ForeColor = Color.White;
+            convertNowButton.ForeColor = theme == AppThemeMode.Light ? Color.Black : Color.White;
             convertNowButton.FlatAppearance.BorderColor = palette.Primary;
             convertNowButton.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.White, 26);
 
             sidebarConvertButton.BackColor = palette.Primary;
-            sidebarConvertButton.ForeColor = Color.White;
+            sidebarConvertButton.ForeColor = theme == AppThemeMode.Light ? Color.Black : Color.White;
             sidebarConvertButton.FlatAppearance.BorderColor = palette.Primary;
             sidebarConvertButton.Image = UiIconFactory.CreateIcon(UiIconKind.Convert, Color.White, 20);
 
             mergeImagesPdfButton.BackColor = palette.Primary;
-            mergeImagesPdfButton.ForeColor = Color.White;
+            mergeImagesPdfButton.ForeColor = theme == AppThemeMode.Light ? Color.Black : Color.White;
             mergeImagesPdfButton.FlatAppearance.BorderColor = palette.Primary;
             mergeImagesPdfButton.Image = UiIconFactory.CreateIcon(UiIconKind.Pdf, Color.White, 22);
 
@@ -177,6 +225,14 @@ namespace FormatForge.App
             outputDirectoryLabel.Image = UiIconFactory.CreateIcon(UiIconKind.Folder, palette.Icon, 16);
             appIcon.Image = UiIconFactory.CreateAppLogoBitmap(64);
             RefreshFileTypeIcons(palette);
+
+            if (themeChanged && IsHandleCreated)
+            {
+                RecreateHandle();
+                Invalidate(true);
+            }
+
+            appliedTheme = theme;
         }
 
         private void ApplyTagLayout(ThemePalette palette)
@@ -240,6 +296,13 @@ namespace FormatForge.App
         protected override async void OnShown(EventArgs e)
         {
             base.OnShown(e);
+
+            BeginInvoke((Action)(() =>
+            {
+                contentSplit.Visible = true;
+                mainSplit.Visible = true;
+            }));
+
             if (startupChecksRan)
             {
                 return;
@@ -337,7 +400,7 @@ namespace FormatForge.App
                     outputFormatComboBox.Enabled = choices.Count > 1 && activeConversion == null;
                     outputFormatLabel.Text = string.IsNullOrWhiteSpace(category) || category == "Mixed"
                         ? "Output Format:"
-                        : category + " Output:";
+                        : category == "Video" ? "Video / Audio Output:" : category + " Output:";
 
                     if (selectedChoice != null)
                     {
@@ -1739,7 +1802,6 @@ namespace FormatForge.App
             browseOutputButton.Enabled = !converting;
             advancedButton.Enabled = !converting;
             mergeImagesPdfButton.Enabled = !converting;
-            filesList.Enabled = !converting;
 
             sidebarConvertButton.Text = converting ? "   Cancel" : "   Convert";
             convertNowButton.Text = converting ? "  Cancel" : "  Convert";
@@ -1934,7 +1996,7 @@ namespace FormatForge.App
             return ext switch
             {
                 "jpg" or "jpeg" or "png" or "webp" or "bmp" or "gif" or "tiff" or "tif" or "ico" => new FileTypeInfo(ext.ToUpperInvariant(), "Images", "image", true),
-                "mp3" or "wav" or "flac" or "aac" or "ogg" or "opus" or "m4a" => new FileTypeInfo(ext.ToUpperInvariant(), "Audio", "audio", true),
+                "mp3" or "wav" or "flac" or "aac" or "ogg" or "opus" or "m4a" or "wma" or "aiff" or "alac" => new FileTypeInfo(ext.ToUpperInvariant(), "Audio", "audio", true),
                 "mp4" or "mkv" or "avi" or "mov" or "webm" or "wmv" or "flv" or "m4v" or "3gp" => new FileTypeInfo(ext.ToUpperInvariant(), "Video", "video", true),
                 "pdf" => new FileTypeInfo("PDF", "PDF", "pdf", true),
                 "doc" or "docx" or "txt" or "rtf" or "ppt" or "pptx" or "xls" or "xlsx" or "html" or "htm" or "csv" or "tsv" or "json" or "xml" or "odt" or "ods" or "odp" => new FileTypeInfo(ext.ToUpperInvariant(), "Documents", "document", true),

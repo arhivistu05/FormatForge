@@ -25,7 +25,8 @@ static const char* supportedFormats[] =
 		".png",
 		".gif",
 		".tiff",
-		".tif"
+		".tif",
+        ".webp"
 };
 
 static const int FormatsCount = sizeof(supportedFormats) / sizeof(supportedFormats[0]);
@@ -86,11 +87,99 @@ static int select_output_format(void)
 	return choice - 1;
 }
 
+static int convert_to_webp_format(const wchar_t* input_file, const wchar_t* output_file)
+{
+    if (input_file == NULL || output_file == NULL)
+    {
+        return 0;
+    }
+
+    wchar_t command[BUFFER_SIZE];
+
+    int result = swprintf_s(
+        command,
+        BUFFER_SIZE,
+        L"ffmpeg.exe -y -i \"%ls\" -c:v libwebp -quality 90 \"%ls\"",
+        input_file,
+        output_file
+    );
+
+    if (result < 0)
+    {
+        printf("Failed to build FFmpeg WebP command.\n");
+        return 0;
+    }
+
+    STARTUPINFOW startup_info;
+    PROCESS_INFORMATION process_info;
+
+    ZeroMemory(&startup_info, sizeof(startup_info));
+    ZeroMemory(&process_info, sizeof(process_info));
+
+    startup_info.cb = sizeof(startup_info);
+
+    BOOL created = CreateProcessW(
+        NULL,
+        command,
+        NULL,
+        NULL,
+        FALSE,
+        CREATE_NO_WINDOW,
+        NULL,
+        NULL,
+        &startup_info,
+        &process_info
+    );
+
+    if (!created)
+    {
+        printf("Failed to start FFmpeg for WebP conversion.\n");
+        return 0;
+    }
+
+    WaitForSingleObject(
+        process_info.hProcess,
+        INFINITE
+    );
+
+    DWORD exit_code = 1;
+
+    GetExitCodeProcess(
+        process_info.hProcess,
+        &exit_code
+    );
+
+    CloseHandle(process_info.hThread);
+    CloseHandle(process_info.hProcess);
+
+    if (exit_code != 0)
+    {
+        printf(
+            "FFmpeg WebP conversion failed. Exit code: %lu\n",
+            exit_code
+        );
+
+        return 0;
+    }
+
+    printf(
+        "Converted to WebP: %ls -> %ls\n",
+        input_file,
+        output_file
+    );
+
+    return 1;
+}
+
 extern "C" IMAGECONVERTER_API int ff_image_convert(
     const wchar_t* input_file,
     const wchar_t* output_file,
     const wchar_t* output_format)
 {
+    if (_wcsicmp(output_format, L".webp") == 0)
+    {
+        return convert_to_webp_format(input_file, output_file);
+    }
     HRESULT hr;
 
     IWICImagingFactory* factory = NULL;

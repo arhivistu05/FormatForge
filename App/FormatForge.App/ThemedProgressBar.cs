@@ -13,7 +13,14 @@ internal sealed class ThemedProgressBar : ProgressBar
 
     public ThemedProgressBar()
     {
-        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint, true);
+        SetStyle(
+            ControlStyles.AllPaintingInWmPaint |
+            ControlStyles.OptimizedDoubleBuffer |
+            ControlStyles.UserPaint |
+            ControlStyles.ResizeRedraw,
+            true);
+
+        DoubleBuffered = true;
     }
 
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -49,27 +56,62 @@ internal sealed class ThemedProgressBar : ProgressBar
         }
     }
 
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        using SolidBrush backgroundBrush = new SolidBrush(BackColor);
+        e.Graphics.FillRectangle(backgroundBrush, ClientRectangle);
+    }
+
     protected override void OnPaint(PaintEventArgs e)
     {
-        Rectangle bounds = new Rectangle(0, 0, Width - 1, Height - 1);
-        if (bounds.Width <= 0 || bounds.Height <= 0)
-        {
+        if (Width <= 1 || Height <= 1)
             return;
-        }
 
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using GraphicsPath backgroundPath = CreatePath(bounds, Math.Min(Height / 2, 8));
-        using SolidBrush trackBrush = new SolidBrush(trackColor);
-        using Pen borderPen = new Pen(borderColor);
+
+        Rectangle bounds = new Rectangle(
+            0,
+            0,
+            Width - 1,
+            Height - 1);
+
+        int radius = Math.Min(Height / 2, 8);
+
+        using GraphicsPath backgroundPath =
+            CreatePath(bounds, radius);
+
+        using SolidBrush trackBrush =
+            new SolidBrush(trackColor);
+
+        using Pen borderPen =
+            new Pen(borderColor);
+
         e.Graphics.FillPath(trackBrush, backgroundPath);
 
-        double ratio = Maximum <= Minimum ? 0 : (Value - Minimum) / (double)(Maximum - Minimum);
-        int fillWidth = (int)Math.Round(bounds.Width * Math.Clamp(ratio, 0.0, 1.0));
+        double ratio = Maximum <= Minimum
+            ? 0
+            : (Value - Minimum) /
+              (double)(Maximum - Minimum);
+
+        ratio = Math.Clamp(ratio, 0.0, 1.0);
+
+        int fillWidth =
+            (int)Math.Round(bounds.Width * ratio);
+
         if (fillWidth > 0)
         {
-            Rectangle fillBounds = new Rectangle(bounds.Left, bounds.Top, fillWidth, bounds.Height);
-            using GraphicsPath fillPath = CreatePath(fillBounds, Math.Min(Height / 2, 8));
-            using SolidBrush fillBrush = new SolidBrush(fillColor);
+            Rectangle fillBounds = new Rectangle(
+                bounds.Left,
+                bounds.Top,
+                fillWidth,
+                bounds.Height);
+
+            using GraphicsPath fillPath =
+                CreatePath(fillBounds, radius);
+
+            using SolidBrush fillBrush =
+                new SolidBrush(fillColor);
+
             e.Graphics.FillPath(fillBrush, fillPath);
         }
 

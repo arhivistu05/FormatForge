@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 
@@ -21,6 +21,8 @@ internal static class WindowsDependencyChecker
     {
         string? foundPath = FindExecutableOnPath("ffmpeg.exe")
             ?? FindFirstExistingPath(
+                Path.Combine(FormatForgePaths.Root, "FFmpeg", "bin", "ffmpeg.exe"),
+                Path.Combine(AppContext.BaseDirectory, "FFmpeg", "bin", "ffmpeg.exe"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ffmpeg", "bin", "ffmpeg.exe"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "ffmpeg", "bin", "ffmpeg.exe"));
 

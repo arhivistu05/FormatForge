@@ -20,34 +20,66 @@ extern "C" {
 #define FF_METADATA_STRING_SIZE 1024
 
 
-	typedef struct
-	{
-		char title[FF_METADATA_STRING_SIZE];
-		char artist[FF_METADATA_STRING_SIZE];
-		char album[FF_METADATA_STRING_SIZE];
-		char album_artist[FF_METADATA_STRING_SIZE];
-		char genre[FF_METADATA_STRING_SIZE];
-		char date[FF_METADATA_STRING_SIZE];
-		char track[FF_METADATA_STRING_SIZE];
-		char disc[FF_METADATA_STRING_SIZE];
-		char composer[FF_METADATA_STRING_SIZE];
-		char comment[FF_METADATA_STRING_SIZE];
-		char copyright[FF_METADATA_STRING_SIZE];
-		char encoder[FF_METADATA_STRING_SIZE];
+    typedef struct
+    {
+        char title[FF_METADATA_STRING_SIZE];
+        char artist[FF_METADATA_STRING_SIZE];
+        char album[FF_METADATA_STRING_SIZE];
+        char album_artist[FF_METADATA_STRING_SIZE];
+        char genre[FF_METADATA_STRING_SIZE];
+        char date[FF_METADATA_STRING_SIZE];
+        char track[FF_METADATA_STRING_SIZE];
+        char disc[FF_METADATA_STRING_SIZE];
+        char composer[FF_METADATA_STRING_SIZE];
+        char comment[FF_METADATA_STRING_SIZE];
+        char copyright[FF_METADATA_STRING_SIZE];
+        char encoder[FF_METADATA_STRING_SIZE];
 
-		uint8_t* cover_data;
-		int cover_size;
+        uint8_t* cover_data;
+        int cover_size;
 
-		char cover_mime_type[128];
+        char cover_mime_type[128];
 
-	} METADATA;
+    } METADATA;
 
 
-	AUDIOCONVERTER_API int ff_audio_convert(
-		const wchar_t* input_file,
-		const wchar_t* output_file,
-		const wchar_t* output_format
-	);
+    typedef struct
+    {
+        int bitrate_kbps;
+        int sample_rate;
+        int channels;
+
+        int quality;
+        int audio_stream_index;
+
+        int preserve_metadata;
+        int overwrite;
+
+        int mp3_vbr;
+        int flac_compression_level;
+
+    } FF_AUDIO_OPTIONS;
+
+
+    AUDIOCONVERTER_API int ff_audio_convert(
+        const wchar_t* input_file,
+        const wchar_t* output_file,
+        const wchar_t* output_format
+    );
+
+
+    AUDIOCONVERTER_API int ff_audio_convert_ex(
+        const wchar_t* input_file,
+        const wchar_t* output_file,
+        const wchar_t* output_format,
+        const FF_AUDIO_OPTIONS* options
+    );
+
+
+    AUDIOCONVERTER_API const char* ff_audio_get_last_error(void);
+
+
+    AUDIOCONVERTER_API void ff_audio_cancel(void);
 
 
 #ifdef __cplusplus

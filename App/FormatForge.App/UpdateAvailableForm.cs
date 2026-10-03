@@ -19,6 +19,7 @@ internal sealed class UpdateAvailableForm : Form
     private void InitializeUpdateForm()
     {
         ThemePalette palette = ThemeManager.GetPalette(theme);
+        WindowChromeTheme.Apply(this, palette);
         Text = "FormatForge Update";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -95,7 +96,7 @@ internal sealed class UpdateAvailableForm : Form
             Anchor = AnchorStyles.Right | AnchorStyles.Bottom,
             FlatStyle = FlatStyle.Flat,
             BackColor = palette.Primary,
-            ForeColor = Color.White
+            ForeColor = theme == AppThemeMode.Light ? Color.Black : Color.White
         };
         releasesButton.FlatAppearance.BorderColor = palette.Primary;
         releasesButton.FlatAppearance.MouseOverBackColor = palette.PrimaryHover;

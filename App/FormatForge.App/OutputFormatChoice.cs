@@ -35,7 +35,13 @@ internal sealed class OutputFormatChoice
 
         foreach (ConverterFormat format in GetFormatsForCategory(normalized))
         {
-            yield return new OutputFormatChoice(GetDisplayName(format), format, normalized);
+            string displayName = GetDisplayName(format);
+            if (normalized == "Video" && ConverterCore.IsAudioFormat(format))
+            {
+                displayName += " (extract audio)";
+            }
+
+            yield return new OutputFormatChoice(displayName, format, normalized);
         }
     }
 
@@ -70,7 +76,14 @@ internal sealed class OutputFormatChoice
                 ConverterFormat.Mkv,
                 ConverterFormat.Mov,
                 ConverterFormat.Webm,
-                ConverterFormat.Wmv
+                ConverterFormat.Wmv,
+                ConverterFormat.Mp3,
+                ConverterFormat.Wav,
+                ConverterFormat.Flac,
+                ConverterFormat.Ogg,
+                ConverterFormat.Opus,
+                ConverterFormat.M4a,
+                ConverterFormat.Aac
             },
             "Documents" or "PDF" => new[]
             {
@@ -92,7 +105,7 @@ internal sealed class OutputFormatChoice
         {
             "Images" => ConverterCore.IsImageFormat(format),
             "Audio" => ConverterCore.IsAudioFormat(format),
-            "Video" => ConverterCore.IsVideoFormat(format),
+            "Video" => ConverterCore.IsVideoFormat(format) || ConverterCore.IsAudioFormat(format),
             "Documents" => format == ConverterFormat.Pdf,
             "PDF" => format == ConverterFormat.Pdf,
             _ => false
